@@ -9,6 +9,9 @@ function valueFor(element, student, school) {
   const values = {
     schoolName: school?.name || "Green Valley Public School",
     schoolTagline: school?.tagline || "Learn • Grow • Achieve",
+    schoolRegistrationNo:
+      school?.registrationNo || school?.schoolCode || "27310304501",
+    principalName: school?.principalName || "Principal",
     studentName: student?.name || "Aarav Sharma",
     admissionNo: student?.admissionNo || "GVPS001",
     rollNo: student?.rollNo || "12",
@@ -66,12 +69,14 @@ function textStyle(element, scale) {
     height: element.height * scale,
     px: 0.35 * scale,
     overflow: "hidden",
-    whiteSpace: "nowrap",
-    textOverflow: "ellipsis",
+    whiteSpace: element.multiline ? "normal" : "nowrap",
+    textOverflow: element.multiline ? "clip" : "ellipsis",
+    wordBreak: element.multiline ? "break-word" : "normal",
     color: element.color,
     bgcolor: element.backgroundColor || "transparent",
     fontSize: element.fontSize * scale,
-    lineHeight: 1.15,
+    lineHeight: element.lineHeight || 1.15,
+    letterSpacing: `${(element.letterSpacing || 0) * scale}px`,
     fontWeight: element.fontWeight,
     textAlign: element.textAlign,
     border:
@@ -80,7 +85,8 @@ function textStyle(element, scale) {
         : undefined,
     borderRadius: `${(element.borderRadius || 0) * scale}px`,
     display: "flex",
-    alignItems: "center",
+    alignItems: element.multiline ? "flex-start" : "center",
+    paddingTop: element.multiline ? 0.25 * scale : 0,
     justifyContent:
       element.textAlign === "center"
         ? "center"

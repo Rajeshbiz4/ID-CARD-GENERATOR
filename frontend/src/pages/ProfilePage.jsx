@@ -63,7 +63,7 @@ export default function ProfilePage({user,onLogout}){
       <Grid item xs={12} lg={8}>
         <Card><CardContent>
           <Grid container spacing={2}>
-            {[["name","School name",8],["tagline","Tagline",4],["academicYear","Academic year",4],["principalName","Principal name",4],
+            {[["name","School name",8],["tagline","Tagline",4],["registrationNo","UDISE / Registration No.",4],["academicYear","Academic year",4],["principalName","Principal name",4],
               ["mobile","Mobile",4],["email","Email",6],["website","Website",6],["address","Address",12],["city","City",4],["state","State",4],["pinCode","PIN",4]
             ].map(([key,label,cols])=><Grid item xs={12} md={cols} key={key}>
               <TextField fullWidth label={label} value={form[key]||""} onChange={e=>setForm({...form,[key]:e.target.value})}/>

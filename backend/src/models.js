@@ -38,12 +38,13 @@ const decorationSchema=new Schema({
 
 const elementSchema=new Schema({
   id:{type:String,required:true},
-  type:{type:String,enum:["schoolLogo","schoolName","schoolTagline","studentPhoto","studentName","admissionNo","rollNo","classDivision","dob","bloodGroup","academicYear","parentName","parentMobile","qrCode","principalSignature","customText"],required:true},
+  type:{type:String,enum:["schoolLogo","schoolName","schoolTagline","schoolRegistrationNo","principalName","studentPhoto","studentName","admissionNo","rollNo","classDivision","dob","bloodGroup","academicYear","parentName","parentMobile","qrCode","principalSignature","customText"],required:true},
   x:{type:Number,default:10},y:{type:Number,default:10},width:{type:Number,default:120},height:{type:Number,default:26},
   fontSize:{type:Number,default:13},fontWeight:{type:Number,default:500},color:{type:String,default:"#0f172a"},
   backgroundColor:{type:String,default:"transparent"},textAlign:{type:String,enum:["left","center","right"],default:"left"},
   borderWidth:{type:Number,default:0},borderColor:{type:String,default:"transparent"},borderRadius:{type:Number,default:0},
-  objectFit:{type:String,enum:["cover","contain"],default:"cover"},prefix:{type:String,default:""},customText:{type:String,default:""}
+  objectFit:{type:String,enum:["cover","contain"],default:"cover"},prefix:{type:String,default:""},customText:{type:String,default:""},
+  multiline:{type:Boolean,default:false},lineHeight:{type:Number,default:1.15},letterSpacing:{type:Number,default:0}
 },{_id:false});
 
 const templateSchema=new Schema({

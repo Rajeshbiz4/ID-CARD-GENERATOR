@@ -1,0 +1,19 @@
+Copy only these files into your existing project:
+
+backend/src/server.js
+backend/src/models.js
+backend/src/systemTemplates.js
+backend/src/systemTemplateBootstrap.js
+frontend/src/TemplateRenderer.jsx
+frontend/src/pages/ProfilePage.jsx
+
+What changed:
+- CORS allows all origins, methods and Authorization header.
+- Template #20 now follows the supplied yellow physical-school-ID layout.
+- Dynamic UDISE / Registration No. and Principal Name support.
+- Long school names can wrap safely.
+- Logo uses contain and student photo uses cover.
+
+After copying, restart backend and frontend.
+The included server.js + systemTemplateBootstrap.js automatically updates template #20 when the API connects to MongoDB.
+You can also run: npm run seed

@@ -29,6 +29,9 @@ const txt = (id, type, x, y, width, fontSize = 12, extra = {}) => ({
   objectFit: extra.objectFit || "cover",
   prefix: extra.prefix || "",
   customText: extra.customText || "",
+  multiline: extra.multiline || false,
+  lineHeight: extra.lineHeight || 1.15,
+  letterSpacing: extra.letterSpacing || 0,
 });
 
 const img = (id, type, x, y, width, height, extra = {}) => ({
@@ -913,47 +916,116 @@ function template19() {
 }
 
 function template20() {
-  const [primary, accent, dark] = P.plum;
+  const yellow = "#ffd51a";
+  const red = "#bd1e2d";
+  const navy = "#07377a";
+  const ink = "#111111";
 
   return {
-    layoutFamily: "Signature Portrait",
+    layoutFamily: "District School Yellow ID",
     orientation: "portrait",
     width: 330,
     height: 520,
     backgroundColor: "#ffffff",
     decorations: [
-      rect(0, 0, 330, 84, dark),
-      rect(0, 84, 330, 7, accent),
-      rect(0, 456, 330, 64, primary),
+      // Main yellow identity header.
+      rect(0, 0, 330, 176, yellow),
+
+      // White diagonal cuts create the same downward-pointing header style
+      // as the supplied physical school ID card.
+      rect(-65, 143, 210, 85, "#ffffff", 1, 31),
+      rect(186, 143, 210, 85, "#ffffff", 1, -31),
+
+      // Student-name band.
+      rect(0, 305, 330, 44, yellow),
+
+      // Bottom yellow accent strip.
+      rect(0, 507, 330, 13, yellow),
+
+      // Small accent at bottom center/right.
+      rect(185, 503, 150, 22, "#ffffff", 1, -18),
     ],
     elements: [
-      img("schoolLogo", "schoolLogo", 18, 16, 44, 44, { objectFit: "contain" }),
-      txt("schoolName", "schoolName", 74, 18, 230, 16, {
-        color: "#ffffff",
+      // Logo stays in a dedicated contain box, so any uploaded logo fits.
+      img("schoolLogo", "schoolLogo", 139, 10, 52, 52, {
+        objectFit: "contain",
+        backgroundColor: "#ffffff",
+      }),
+
+      // School name can wrap to two/three lines instead of overlapping.
+      txt("schoolName", "schoolName", 20, 63, 290, 17, {
+        color: red,
         fontWeight: 900,
+        textAlign: "center",
+        height: 54,
+        multiline: true,
+        lineHeight: 1.05,
       }),
-      img("studentPhoto", "studentPhoto", 28, 124, 100, 132, {
-        borderWidth: 4,
-        borderColor: primary,
+
+      txt("schoolTagline", "schoolTagline", 30, 113, 270, 10.5, {
+        color: ink,
+        fontWeight: 800,
+        textAlign: "center",
+        height: 22,
       }),
-      txt("studentName", "studentName", 148, 128, 156, 20, {
-        color: dark,
+
+      txt("schoolRegistrationNo", "schoolRegistrationNo", 30, 136, 270, 12.5, {
+        color: navy,
         fontWeight: 900,
-        height: 48,
+        textAlign: "center",
+        prefix: "UDISE NO.  ",
       }),
-      txt("admissionNo", "admissionNo", 148, 190, 156, 11, { prefix: "Admission  " }),
-      txt("classDivision", "classDivision", 148, 224, 156, 11, { prefix: "Class  " }),
-      txt("rollNo", "rollNo", 34, 292, 140, 11, { prefix: "Roll  " }),
-      txt("dob", "dob", 34, 326, 140, 11, { prefix: "DOB  " }),
-      txt("bloodGroup", "bloodGroup", 34, 360, 140, 11, { prefix: "Blood  " }),
-      qr(220, 302, 70),
-      img("principalSignature", "principalSignature", 34, 405, 110, 36, {
+
+      txt("identityTitle", "customText", 30, 158, 270, 15, {
+        color: ink,
+        fontWeight: 900,
+        textAlign: "center",
+        customText: "ओळखपत्र",
+      }),
+
+      // Standard ID-photo area. Uploaded photos use objectFit=cover.
+      img("studentPhoto", "studentPhoto", 111, 183, 108, 126, {
+        objectFit: "cover",
+        borderWidth: 3,
+        borderColor: red,
+        backgroundColor: "#eef2f7",
+      }),
+
+      txt("studentName", "studentName", 18, 312, 294, 20, {
+        color: navy,
+        fontWeight: 900,
+        textAlign: "center",
+        height: 30,
+      }),
+
+      txt("dob", "dob", 30, 363, 270, 12, {
+        color: ink,
+        fontWeight: 800,
+        prefix: "जन्मतारीख  :  ",
+      }),
+
+      txt("rollNo", "rollNo", 30, 397, 270, 12, {
+        color: ink,
+        fontWeight: 800,
+        prefix: "रजिस्टर नंबर  :  ",
+      }),
+
+      txt("parentMobile", "parentMobile", 30, 431, 270, 12, {
+        color: ink,
+        fontWeight: 800,
+        prefix: "मोबाईल नंबर  :  ",
+      }),
+
+      // Signature occupies its own isolated zone.
+      img("principalSignature", "principalSignature", 198, 458, 108, 31, {
         objectFit: "contain",
       }),
-      txt("academicYear", "academicYear", 170, 478, 130, 10, {
-        color: "#ffffff",
-        textAlign: "right",
+
+      txt("principalName", "principalName", 188, 486, 122, 8.5, {
+        color: navy,
         fontWeight: 800,
+        textAlign: "center",
+        height: 17,
       }),
     ],
   };
@@ -1002,7 +1074,7 @@ const names = [
   "Side Compact",
   "Academic Formal",
   "Modern Geometry",
-  "Signature Portrait",
+  "District School Yellow ID",
 ];
 
 export const SYSTEM_TEMPLATES = templates.map((design, index) => {

@@ -7,6 +7,7 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 
 import { connectDatabase } from "./config/database.js";
+import { ensureSystemTemplates } from "./systemTemplateBootstrap.js";
 import {
   imageUpload,
   getOwnedImage,
@@ -29,12 +30,6 @@ const JWT_SECRET =
   process.env.JWT_SECRET ||
   "development-secret-change-before-production";
 
-const allowedOrigins = String(
-  process.env.CLIENT_URL || "http://localhost:5173"
-)
-  .split(",")
-  .map((value) => value.trim())
-  .filter(Boolean);
 
 app.use(
   helmet({
@@ -44,29 +39,20 @@ app.use(
   })
 );
 
-app.use(
-  cors({
-    origin(origin, callback) {
-      if (!origin || allowedOrigins.includes(origin)) {
-        return callback(null, true);
-      }
+const corsOptions = {
+  // Allow requests from any browser origin.
+  // `origin: true` reflects the incoming Origin header, so credentials
+  // can still be used without the invalid "* + credentials" combination.
+  origin: true,
+  credentials: true,
+  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+  exposedHeaders: ["Content-Type", "Content-Length"],
+  maxAge: 86400,
+};
 
-      if (
-        process.env.ALLOW_VERCEL_PREVIEWS === "true" &&
-        /^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)
-      ) {
-        return callback(null, true);
-      }
-
-      return callback(
-        new Error(
-          `CORS blocked origin: ${origin}`
-        )
-      );
-    },
-    credentials: true,
-  })
-);
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
 app.use(
   express.json({
@@ -91,6 +77,7 @@ app.use(
 app.use(async (req, res, next) => {
   try {
     await connectDatabase();
+    await ensureSystemTemplates();
     next();
   } catch (error) {
     console.error(
@@ -206,7 +193,7 @@ app.get("/", (req, res) => {
   return ok(res, {
     application:
       "School ID Card Generator",
-    version: "1.5.0",
+    version: "1.9.0",
   });
 });
 
@@ -1294,16 +1281,28 @@ app.get(
   async (req, res) => {
     let settings =
       await TemplateSettings.findOne({
-        schoolId:
-          req.auth.schoolId,
+        schoolId: req.auth.schoolId,
       })
-        .populate(
-          "templateId"
-        )
+        .populate("templateId")
         .lean();
 
-    if (!settings) {
-      const first =
+    const selectedTemplate =
+      settings?.templateId || null;
+
+    const selectedIsValid =
+      selectedTemplate &&
+      selectedTemplate.active === true &&
+      selectedTemplate.isDeleted !== true &&
+      (
+        selectedTemplate.type === "SYSTEM" ||
+        (
+          selectedTemplate.type === "CUSTOM" &&
+          String(selectedTemplate.schoolId) === String(req.auth.schoolId)
+        )
+      );
+
+    if (!selectedIsValid) {
+      const firstSystemTemplate =
         await Template.findOne({
           type: "SYSTEM",
           active: true,
@@ -1312,29 +1311,29 @@ app.get(
           name: 1,
         });
 
-      const created =
-        await TemplateSettings.create({
-          schoolId:
-            req.auth.schoolId,
-          templateId:
-            first?._id ||
-            null,
-        });
-
       settings =
-        await TemplateSettings.findById(
-          created._id
+        await TemplateSettings.findOneAndUpdate(
+          {
+            schoolId: req.auth.schoolId,
+          },
+          {
+            $set: {
+              templateId: firstSystemTemplate?._id || null,
+            },
+            $setOnInsert: {
+              schoolId: req.auth.schoolId,
+            },
+          },
+          {
+            new: true,
+            upsert: true,
+          }
         )
-          .populate(
-            "templateId"
-          )
+          .populate("templateId")
           .lean();
     }
 
-    return ok(
-      res,
-      settings
-    );
+    return ok(res, settings);
   }
 );
 
@@ -1458,7 +1457,9 @@ if (!process.env.VERCEL) {
     );
 
   connectDatabase()
-    .then(() => {
+    .then(async () => {
+      await ensureSystemTemplates();
+
       app.listen(
         port,
         () => {
