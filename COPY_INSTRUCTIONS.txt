@@ -1,0 +1,28 @@
+School ID Card Generator v1.8 - Changed Files Only
+
+Copy these files into the same paths in your existing v1.7 project and replace the old files.
+
+Main changes included:
+- 20 redesigned premium templates
+- Improved professional login page
+- Default school logo
+- Default student photo
+- Image normalization before upload
+- School logo standardized to 600x600 PNG
+- Student photo standardized to 600x750 PNG
+- Signature standardized to 1000x300 PNG
+- Custom template background normalization
+- Safer template renderer to prevent text/photo/QR overlap
+
+After copying:
+
+Backend:
+  cd backend
+  npm run dev
+
+Frontend:
+  cd frontend
+  npm run dev
+
+The backend template bootstrap will update the 20 SYSTEM templates automatically.
+CUSTOM templates are preserved.

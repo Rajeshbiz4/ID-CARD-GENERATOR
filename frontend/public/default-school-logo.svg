@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#ffffff"/>
+  <circle cx="256" cy="256" r="205" fill="#123a67"/>
+  <circle cx="256" cy="256" r="176" fill="#ffffff" stroke="#e1b64f" stroke-width="16"/>
+  <path d="M135 306c38-24 77-35 121-35s84 11 121 35v45c-39-18-79-27-121-27s-82 9-121 27z" fill="#123a67"/>
+  <path d="M164 285l92-53 92 53-92 52z" fill="#e1b64f"/>
+  <circle cx="256" cy="173" r="39" fill="#e1b64f"/>
+  <path d="M256 215v70M220 244l36-29 36 29" stroke="#123a67" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M175 142c21-20 45-34 70-40M337 142c-21-20-45-34-70-40" stroke="#2c8a58" stroke-width="16" stroke-linecap="round"/>
+  <text x="256" y="405" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#123a67">SCHOOL</text>
+</svg>

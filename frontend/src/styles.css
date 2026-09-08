@@ -1,0 +1,12 @@
+*{box-sizing:border-box}
+html,body,#root{min-height:100%;margin:0}
+body{
+  background:
+    radial-gradient(circle at 4% 0%,rgba(79,70,229,.08),transparent 28rem),
+    radial-gradient(circle at 100% 0%,rgba(14,165,233,.07),transparent 26rem),
+    #f4f7fb
+}
+.MuiPaper-root,.MuiCard-root,.MuiButton-root,.MuiOutlinedInput-root,.MuiDialog-paper,
+.MuiListItemButton-root,.MuiChip-root,.MuiDataGrid-root,.MuiSnackbarContent-root{
+  border-radius:0!important
+}
