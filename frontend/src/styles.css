@@ -27,8 +27,8 @@ body{
   transition: padding-bottom 120ms ease;
 }
 
-.marathi-field-shell--active {
-  padding-bottom: 238px;
+.marathi-field-shell--suggestions-open {
+  padding-bottom: 228px;
 }
 
 .marathi-transliterate,
@@ -116,11 +116,17 @@ body{
 
 /* On smaller screens use fewer pixels while still keeping rows separate. */
 @media (max-width: 900px) {
-  .marathi-field-shell--active {
-    padding-bottom: 230px;
+  .marathi-field-shell--suggestions-open {
+    padding-bottom: 220px;
   }
 
   .marathi-suggestion-list {
     max-height: 220px !important;
   }
+}
+
+
+/* Never reserve suggestion space for an empty/hidden list. */
+.marathi-suggestion-list:empty {
+  display: none !important;
 }

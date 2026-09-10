@@ -203,8 +203,72 @@ export function MarathiTextField({
     setFocused,
   ] = useState(false);
 
+  const [
+    suggestionsOpen,
+    setSuggestionsOpen,
+  ] = useState(false);
+
+  const shellRef =
+    useRef(null);
+
   const blurTimerRef =
     useRef(null);
+
+  useEffect(() => {
+    const shell =
+      shellRef.current;
+
+    if (!shell) {
+      return undefined;
+    }
+
+    const updateSuggestionState =
+      () => {
+        const list =
+          shell.querySelector(
+            ".marathi-suggestion-list"
+          );
+
+        const hasItems =
+          Boolean(
+            list &&
+            list.children &&
+            list.children.length > 0
+          );
+
+        setSuggestionsOpen(
+          focused &&
+          hasItems
+        );
+      };
+
+    updateSuggestionState();
+
+    const observer =
+      new MutationObserver(
+        updateSuggestionState
+      );
+
+    observer.observe(
+      shell,
+      {
+        childList: true,
+        subtree: true,
+        attributes: true,
+        attributeFilter: [
+          "class",
+          "style",
+        ],
+      }
+    );
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [
+    focused,
+    value,
+  ]);
 
   useEffect(() => {
     return () => {
@@ -239,11 +303,11 @@ export function MarathiTextField({
       );
     }
 
-    // Delay allows mouse/touch selection from the suggestion box
-    // to finish before the reserved space collapses.
+    // Keep suggestions alive briefly so mouse/touch selection can finish.
     blurTimerRef.current =
       setTimeout(() => {
         setFocused(false);
+        setSuggestionsOpen(false);
       }, 220);
   };
 
@@ -273,9 +337,10 @@ export function MarathiTextField({
 
   return (
     <Box
+      ref={shellRef}
       className={
-        focused
-          ? "marathi-field-shell marathi-field-shell--active"
+        suggestionsOpen
+          ? "marathi-field-shell marathi-field-shell--suggestions-open"
           : "marathi-field-shell"
       }
     >

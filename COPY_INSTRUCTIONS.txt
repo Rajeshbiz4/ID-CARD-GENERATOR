@@ -1,52 +1,25 @@
-v2.4 MARATHI OVERLAP + RESPONSIVE FIX
+SIDEBAR SELECTION FIX
 
-Replace these files over the latest v2.4 project:
-
-frontend/src/MarathiTyping.jsx
-frontend/src/styles.css
-frontend/src/pages/StudentFormPage.jsx
+Replace:
 frontend/src/Layout.jsx
 
-WHAT IS FIXED
+Problem:
+On /school/students/new both "Students" and "Add Student" were selected because
+the previous active check used startsWith("/school/students").
 
-1. Marathi suggestion overlap
-- Previous high z-index only placed the suggestions above other fields.
-- It did NOT stop Class / Division / Parent fields from sitting behind the list.
-- The active Marathi field now reserves 238px below the input.
-- Therefore the next form row physically moves down while typing.
-- Suggestions no longer cover the next form fields.
-- Space collapses again after the field loses focus.
+Fix:
+The sidebar now finds all matching menu routes and selects only the longest /
+most specific route.
 
-2. Correct suggestion styles
-- Uses the transliteration package's supported:
-  suggestionsClassName
-  itemClassName
-  activeItemClassName
-- Suggestion list width follows the input width.
-- Maximum 5 suggestions.
-- Higher z-index retained.
-
-3. Responsive Add Student / sidebar
-- Desktop sidebar is unchanged.
-- Below MUI md breakpoint the permanent sidebar becomes a temporary drawer.
-- A menu button appears in the top bar.
-- Page heading, language bar and form no longer get squeezed/cut beside a 260px permanent drawer.
-- Email text truncates safely on small screens.
-
-4. Existing functionality is unchanged
-- Student CRUD
-- English/Marathi typing
-- Photo upload
-- 100 templates
-- Signature
-- ID generation
-- GridFS
-- Authentication
+Result:
+- /school/students       -> Students selected
+- /school/students/new   -> Add Student selected
+- /school/students/:id/edit -> Students selected
+- other menu routes      -> only their matching item selected
 
 After copying:
-
 cd frontend
 npm run dev
 
-Then:
+Then hard refresh:
 Ctrl + Shift + R

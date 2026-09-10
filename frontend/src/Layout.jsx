@@ -135,6 +135,38 @@ export default function Layout({
     }
   };
 
+  const activeMenuPath =
+    menu
+      .filter(
+        ([
+          _label,
+          path,
+        ]) => {
+          if (
+            path === "/school" ||
+            path === "/admin"
+          ) {
+            return (
+              location.pathname ===
+              path
+            );
+          }
+
+          return (
+            location.pathname ===
+              path ||
+            location.pathname.startsWith(
+              `${path}/`
+            )
+          );
+        }
+      )
+      .sort(
+        (a, b) =>
+          b[1].length -
+          a[1].length
+      )[0]?.[1] || "";
+
   const drawerContent = (
     <>
       <Box
@@ -190,17 +222,8 @@ export default function Layout({
             icon,
           ]) => {
             const active =
-              (
-                path ===
-                  "/school" ||
-                path ===
-                  "/admin"
-              )
-                ? location.pathname ===
-                  path
-                : location.pathname.startsWith(
-                    path
-                  );
+              path ===
+              activeMenuPath;
 
             return (
               <ListItemButton
