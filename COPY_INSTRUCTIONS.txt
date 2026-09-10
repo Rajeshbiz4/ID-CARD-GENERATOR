@@ -1,21 +1,17 @@
-SIDEBAR SELECTION FIX
+LOGIN PAGE - FIT SCREEN / NO DESKTOP SCROLL
 
-Replace:
-frontend/src/Layout.jsx
+Replace only:
+frontend/src/pages/LoginPage.jsx
 
-Problem:
-On /school/students/new both "Students" and "Add Student" were selected because
-the previous active check used startsWith("/school/students").
-
-Fix:
-The sidebar now finds all matching menu routes and selects only the longest /
-most specific route.
-
-Result:
-- /school/students       -> Students selected
-- /school/students/new   -> Add Student selected
-- /school/students/:id/edit -> Students selected
-- other menu routes      -> only their matching item selected
+Changes:
+- Desktop login page now uses 100dvh.
+- Vertical overflow is hidden on desktop.
+- Main section uses flex: 1 with minHeight: 0.
+- Header, content card and footer spacing reduced slightly.
+- Login card is constrained to the available viewport.
+- No browser vertical scrollbar should appear at normal desktop resolutions.
+- Mobile/small screens still allow natural scrolling when content cannot fit.
+- Login/authentication/API logic is unchanged.
 
 After copying:
 cd frontend

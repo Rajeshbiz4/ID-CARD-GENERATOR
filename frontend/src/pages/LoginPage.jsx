@@ -1,4 +1,7 @@
-import { useState } from "react";
+import {
+  useState,
+} from "react";
+
 import {
   Alert,
   Box,
@@ -10,225 +13,613 @@ import {
   TextField,
   Typography,
 } from "@mui/material";
+
 import {
   EmailRounded,
   LockRounded,
   SchoolRounded,
   VerifiedUserRounded,
 } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
-import { api, errorMessage } from "../api";
 
-export default function LoginPage({ onLogin }) {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
+import {
+  useNavigate,
+} from "react-router-dom";
 
-  const submit = async (event) => {
-    event.preventDefault();
-    setError("");
-    setBusy(true);
+import {
+  api,
+  errorMessage,
+} from "../api";
 
-    try {
-      const response = await api.post("/auth/login", {
-        email,
-        password,
-      });
+export default function LoginPage({
+  onLogin,
+}) {
+  const navigate =
+    useNavigate();
 
-      const data = response.data.data;
+  const [
+    email,
+    setEmail,
+  ] = useState("");
 
-      localStorage.setItem("sid_token", data.token);
-      localStorage.setItem("sid_user", JSON.stringify(data.user));
-      onLogin(data.user);
+  const [
+    password,
+    setPassword,
+  ] = useState("");
 
-      navigate(data.user.role === "ADMIN" ? "/admin" : "/school");
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(false);
-    }
-  };
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  const [
+    busy,
+    setBusy,
+  ] = useState(false);
+
+  const submit =
+    async (event) => {
+      event.preventDefault();
+      setError("");
+      setBusy(true);
+
+      try {
+        const response =
+          await api.post(
+            "/auth/login",
+            {
+              email,
+              password,
+            }
+          );
+
+        const data =
+          response.data.data;
+
+        localStorage.setItem(
+          "sid_token",
+          data.token
+        );
+
+        localStorage.setItem(
+          "sid_user",
+          JSON.stringify(
+            data.user
+          )
+        );
+
+        onLogin(data.user);
+
+        navigate(
+          data.user.role ===
+            "ADMIN"
+            ? "/admin"
+            : "/school"
+        );
+      } catch (e) {
+        setError(
+          errorMessage(e)
+        );
+      } finally {
+        setBusy(false);
+      }
+    };
 
   return (
     <Box
       sx={{
-        minHeight: "100vh",
-        display: "grid",
-        gridTemplateColumns: {
-          xs: "1fr",
-          lg: "1.06fr .94fr",
+        minHeight: {
+          xs: "100vh",
+          md: "100dvh",
         },
-        bgcolor: "#eef2f7",
+        height: {
+          xs: "auto",
+          md: "100dvh",
+        },
+        bgcolor:
+          "#eef3f8",
+        display: "flex",
+        flexDirection:
+          "column",
+        overflow: {
+          xs: "visible",
+          md: "hidden",
+        },
       }}
     >
+      {/* Official-style top accent */}
       <Box
         sx={{
-          display: { xs: "none", lg: "flex" },
-          minHeight: "100vh",
-          color: "#ffffff",
-          p: 7,
-          flexDirection: "column",
-          justifyContent: "space-between",
+          height: 5,
           background:
-            "linear-gradient(145deg,#07111f 0%,#102847 55%,#1f4f78 100%)",
+            "linear-gradient(90deg,#f59e0b 0 33.33%,#ffffff 33.33% 66.66%,#138808 66.66% 100%)",
+          borderBottom:
+            "1px solid #d8e0e8",
+        }}
+      />
+
+      {/* Government-portal inspired header */}
+      <Box
+        component="header"
+        sx={{
+          bgcolor:
+            "#ffffff",
+          borderBottom:
+            "1px solid #cfd8e3",
         }}
       >
-        <Stack direction="row" spacing={1.5} alignItems="center">
-          <Box
-            component="img"
-            src="/default-school-logo.svg"
-            alt="School ID Studio"
-            sx={{
-              width: 58,
-              height: 58,
-              bgcolor: "#ffffff",
-              p: 0.5,
-            }}
-          />
-
-          <Box>
-            <Typography variant="h6" fontWeight={900}>
-              School ID Studio
-            </Typography>
-            <Typography sx={{ color: "#b8c9dc", fontSize: 13 }}>
-              Student Identity Management Platform
-            </Typography>
-          </Box>
-        </Stack>
-
-        <Box sx={{ maxWidth: 690 }}>
-          <Typography
-            sx={{
-              fontSize: { lg: 52, xl: 60 },
-              lineHeight: 1.05,
-              letterSpacing: "-.045em",
-              fontWeight: 950,
-            }}
-          >
-            Professional school
-            <br />
-            identity cards,
-            <br />
-            managed securely.
-          </Typography>
-
-          <Typography
-            sx={{
-              mt: 3,
-              maxWidth: 600,
-              fontSize: 17,
-              lineHeight: 1.65,
-              color: "#c6d5e5",
-            }}
-          >
-            Manage students, school branding, professional card layouts,
-            custom templates and print-ready IDs from one secure workspace.
-          </Typography>
-
+        <Box
+          sx={{
+            maxWidth: 1240,
+            mx: "auto",
+            width: "100%",
+            px: {
+              xs: 2,
+              sm: 3,
+            },
+            py: {
+              xs: 1.4,
+              sm: 1.5,
+              md: 1.25,
+            },
+          }}
+        >
           <Stack
             direction="row"
-            spacing={3}
-            sx={{ mt: 4 }}
+            alignItems="center"
+            spacing={1.8}
           >
-            {[
-              "Secure school access",
-              "100 professional layouts",
-              "Custom template designer",
-            ].map((label) => (
-              <Stack
-                key={label}
-                direction="row"
-                spacing={0.8}
-                alignItems="center"
+            <Box
+              component="img"
+              src="/default-school-logo.svg"
+              alt="School ID Studio"
+              sx={{
+                width: {
+                  xs: 48,
+                  sm: 58,
+                },
+                height: {
+                  xs: 48,
+                  sm: 58,
+                },
+                objectFit:
+                  "contain",
+                bgcolor:
+                  "#ffffff",
+                border:
+                  "1px solid #d7dee8",
+                p: 0.5,
+                flexShrink: 0,
+              }}
+            />
+
+            <Box
+              sx={{
+                minWidth: 0,
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: {
+                    xs: 19,
+                    sm: 24,
+                  },
+                  lineHeight: 1.15,
+                  fontWeight: 900,
+                  color:
+                    "#12355b",
+                }}
               >
-                <VerifiedUserRounded sx={{ fontSize: 18, color: "#7dd3fc" }} />
-                <Typography sx={{ fontSize: 13, color: "#dbeafe" }}>
-                  {label}
-                </Typography>
-              </Stack>
-            ))}
+                School Identity Management Portal
+              </Typography>
+
+              <Typography
+                sx={{
+                  mt: 0.35,
+                  fontSize: {
+                    xs: 12,
+                    sm: 13,
+                  },
+                  color:
+                    "#5d7088",
+                }}
+              >
+                School ID Studio · Secure Student Identity Services
+              </Typography>
+            </Box>
           </Stack>
         </Box>
-
-        <Typography sx={{ fontSize: 12, color: "#8ca4bd" }}>
-          Authorized users only · Admin and school accounts
-        </Typography>
       </Box>
 
+      {/* Notice band */}
       <Box
         sx={{
-          display: "grid",
-          placeItems: "center",
-          px: { xs: 2, sm: 5 },
-          py: 5,
-          bgcolor: "#f7f9fc",
+          bgcolor:
+            "#12355b",
+          color:
+            "#ffffff",
+          borderBottom:
+            "4px solid #f59e0b",
         }}
       >
-        <Box sx={{ width: "100%", maxWidth: 450 }}>
-          <Box sx={{ mb: 3, display: { xs: "block", lg: "none" } }}>
-            <Stack direction="row" spacing={1.2} alignItems="center">
-              <SchoolRounded color="primary" />
-              <Typography fontWeight={900}>School ID Studio</Typography>
-            </Stack>
-          </Box>
+        <Box
+          sx={{
+            maxWidth: 1240,
+            mx: "auto",
+            px: {
+              xs: 2,
+              sm: 3,
+            },
+            py: 1,
+          }}
+        >
+          <Stack
+            direction="row"
+            spacing={1}
+            alignItems="center"
+          >
+            <VerifiedUserRounded
+              sx={{
+                fontSize: 18,
+                color:
+                  "#fde68a",
+              }}
+            />
 
-          <Card sx={{ p: { xs: 3, sm: 4.5 } }}>
+            <Typography
+              sx={{
+                fontSize: {
+                  xs: 12,
+                  sm: 13,
+                },
+                fontWeight: 700,
+              }}
+            >
+              Authorized access for registered administrators and schools only
+            </Typography>
+          </Stack>
+        </Box>
+      </Box>
+
+      {/* Main login area */}
+      <Box
+        component="main"
+        sx={{
+          flex: "1 1 auto",
+          minHeight: 0,
+          display: "grid",
+          placeItems:
+            "center",
+          px: {
+            xs: 2,
+            sm: 3,
+          },
+          py: {
+            xs: 3,
+            md: 2,
+            lg: 2.25,
+          },
+          overflow: {
+            xs: "visible",
+            md: "hidden",
+          },
+        }}
+      >
+        <Box
+          sx={{
+            width: "100%",
+            maxWidth: 1120,
+            display:
+              "grid",
+            gridTemplateColumns:
+              {
+                xs:
+                  "1fr",
+                md:
+                  "1.05fr .95fr",
+              },
+            border:
+              "1px solid #cfd8e3",
+            bgcolor:
+              "#ffffff",
+            boxShadow:
+              "0 14px 38px rgba(15,23,42,.08)",
+            maxHeight: {
+              xs: "none",
+              md: "100%",
+            },
+            overflow: {
+              xs: "visible",
+              md: "hidden",
+            },
+          }}
+        >
+          {/* Left information section */}
+          <Box
+            sx={{
+              display: {
+                xs:
+                  "none",
+                md:
+                  "block",
+              },
+              p: {
+                md: 3,
+                lg: 3.5,
+              },
+              bgcolor:
+                "#f7f9fc",
+              borderRight:
+                "1px solid #d8e0e8",
+            }}
+          >
             <Typography
               variant="overline"
-              color="primary"
-              fontWeight={900}
-              sx={{ letterSpacing: 1.1 }}
+              sx={{
+                color:
+                  "#b45309",
+                fontWeight: 900,
+                letterSpacing: 1,
+              }}
             >
-              SECURE SIGN IN
+              OFFICIAL SCHOOL SERVICES
             </Typography>
 
-            <Typography variant="h4" sx={{ mt: 0.5 }}>
-              Welcome back
+            <Typography
+              sx={{
+                mt: 0.6,
+                fontSize: {
+                  md: 28,
+                  lg: 32,
+                },
+                lineHeight: 1.16,
+                fontWeight: 900,
+                color:
+                  "#12355b",
+              }}
+            >
+              Secure School ID Card Management System
             </Typography>
 
-            <Typography color="text.secondary" sx={{ mt: 1, mb: 3 }}>
-              Sign in with the credentials provided for your account.
+            <Typography
+              sx={{
+                mt: 1.5,
+                color:
+                  "#52657c",
+                lineHeight: 1.7,
+                fontSize: 15,
+                maxWidth: 520,
+              }}
+            >
+              Manage student records, school information, ID-card templates and print-ready identity cards from one secure portal.
             </Typography>
 
-            <Divider sx={{ mb: 3 }} />
+            <Divider
+              sx={{
+                my: 2,
+              }}
+            />
+
+            <Stack
+              spacing={1.15}
+            >
+              {[
+                "100 professional English and Marathi ID-card templates",
+                "Secure administrator and school login",
+                "Student photo, school logo and principal signature support",
+                "Custom templates and print-ready PDF/PNG generation",
+              ].map(
+                (text) => (
+                  <Stack
+                    key={text}
+                    direction="row"
+                    spacing={1.1}
+                    alignItems="flex-start"
+                  >
+                    <VerifiedUserRounded
+                      sx={{
+                        mt: 0.2,
+                        fontSize: 19,
+                        color:
+                          "#138808",
+                        flexShrink: 0,
+                      }}
+                    />
+
+                    <Typography
+                      sx={{
+                        color:
+                          "#334155",
+                        fontSize: 14,
+                        lineHeight: 1.5,
+                      }}
+                    >
+                      {text}
+                    </Typography>
+                  </Stack>
+                )
+              )}
+            </Stack>
+
+            <Box
+              sx={{
+                mt: 2.2,
+                p: 1.5,
+                borderLeft:
+                  "4px solid #f59e0b",
+                bgcolor:
+                  "#fffaf0",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: 13,
+                  color:
+                    "#6b4f1d",
+                  lineHeight: 1.55,
+                }}
+              >
+                For security, do not share your account password or login credentials with unauthorized persons.
+              </Typography>
+            </Box>
+          </Box>
+
+          {/* Login panel */}
+          <Box
+            sx={{
+              p: {
+                xs: 2.5,
+                sm: 3,
+                md: 3,
+                lg: 3.5,
+              },
+            }}
+          >
+            <Box
+              sx={{
+                mb: 1.8,
+              }}
+            >
+              <Stack
+                direction="row"
+                spacing={1}
+                alignItems="center"
+              >
+                <SchoolRounded
+                  sx={{
+                    color:
+                      "#12355b",
+                  }}
+                />
+
+                <Typography
+                  sx={{
+                    fontSize: 13,
+                    fontWeight: 900,
+                    color:
+                      "#12355b",
+                    letterSpacing:
+                      ".06em",
+                  }}
+                >
+                  USER LOGIN
+                </Typography>
+              </Stack>
+
+              <Typography
+                sx={{
+                  mt: 0.8,
+                  fontSize: {
+                    xs: 27,
+                    sm: 30,
+                  },
+                  fontWeight: 900,
+                  color:
+                    "#111827",
+                }}
+              >
+                Sign in to your account
+              </Typography>
+
+              <Typography
+                sx={{
+                  mt: 0.7,
+                  color:
+                    "#64748b",
+                  fontSize: 14,
+                  lineHeight: 1.5,
+                }}
+              >
+                Enter your registered email address and password.
+              </Typography>
+            </Box>
+
+            <Divider
+              sx={{
+                mb: 1.8,
+              }}
+            />
 
             {error && (
-              <Alert severity="error" sx={{ mb: 2 }}>
+              <Alert
+                severity="error"
+                sx={{
+                  mb: 2,
+                }}
+              >
                 {error}
               </Alert>
             )}
 
-            <Box component="form" onSubmit={submit}>
-              <Stack spacing={2}>
+            <Box
+              component="form"
+              onSubmit={
+                submit
+              }
+            >
+              <Stack
+                spacing={1.5}
+              >
                 <TextField
-                  label="Email address"
+                  fullWidth
+                  required
                   type="email"
+                  label="Registered Email Address"
+                  value={
+                    email
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setEmail(
+                      event.target
+                        .value
+                    )
+                  }
                   autoComplete="username"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
                   InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <EmailRounded fontSize="small" />
-                      </InputAdornment>
-                    ),
+                    startAdornment:
+                      (
+                        <InputAdornment position="start">
+                          <EmailRounded
+                            sx={{
+                              color:
+                                "#64748b",
+                            }}
+                          />
+                        </InputAdornment>
+                      ),
                   }}
                 />
 
                 <TextField
-                  label="Password"
+                  fullWidth
+                  required
                   type="password"
+                  label="Password"
+                  value={
+                    password
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setPassword(
+                      event.target
+                        .value
+                    )
+                  }
                   autoComplete="current-password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
                   InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <LockRounded fontSize="small" />
-                      </InputAdornment>
-                    ),
+                    startAdornment:
+                      (
+                        <InputAdornment position="start">
+                          <LockRounded
+                            sx={{
+                              color:
+                                "#64748b",
+                            }}
+                          />
+                        </InputAdornment>
+                      ),
                   }}
                 />
 
@@ -236,25 +627,104 @@ export default function LoginPage({ onLogin }) {
                   type="submit"
                   variant="contained"
                   size="large"
-                  disabled={busy}
-                  sx={{ py: 1.25 }}
+                  disabled={
+                    busy
+                  }
+                  sx={{
+                    minHeight: 48,
+                    bgcolor:
+                      "#12355b",
+                    fontWeight: 900,
+                    "&:hover": {
+                      bgcolor:
+                        "#0b2949",
+                    },
+                  }}
                 >
-                  {busy ? "Signing in..." : "Sign in"}
+                  {busy
+                    ? "Signing in..."
+                    : "Sign In"}
                 </Button>
               </Stack>
             </Box>
 
-            <Typography
+            <Box
               sx={{
-                mt: 3,
-                fontSize: 12,
-                color: "text.secondary",
-                textAlign: "center",
+                mt: 2,
+                p: 1.25,
+                bgcolor:
+                  "#f8fafc",
+                border:
+                  "1px solid #e2e8f0",
               }}
             >
-              If you do not have login access, contact your school administrator.
+              <Typography
+                sx={{
+                  fontSize: 12.5,
+                  color:
+                    "#64748b",
+                  lineHeight: 1.55,
+                }}
+              >
+                If you are unable to sign in, contact your school administrator or system administrator for account assistance.
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+      </Box>
+
+      {/* Footer */}
+      <Box
+        component="footer"
+        sx={{
+          bgcolor:
+            "#ffffff",
+          borderTop:
+            "1px solid #cfd8e3",
+        }}
+      >
+        <Box
+          sx={{
+            maxWidth: 1240,
+            mx: "auto",
+            px: {
+              xs: 2,
+              sm: 3,
+            },
+            py: {
+              xs: 1.2,
+              md: 0.8,
+            },
+          }}
+        >
+          <Stack
+            direction={{
+              xs: "column",
+              sm: "row",
+            }}
+            spacing={0.5}
+            justifyContent="space-between"
+          >
+            <Typography
+              sx={{
+                fontSize: 12,
+                color:
+                  "#64748b",
+              }}
+            >
+              School ID Studio · Student Identity Management Portal
             </Typography>
-          </Card>
+
+            <Typography
+              sx={{
+                fontSize: 12,
+                color:
+                  "#64748b",
+              }}
+            >
+              Secure access · Authorized users only
+            </Typography>
+          </Stack>
         </Box>
       </Box>
     </Box>
