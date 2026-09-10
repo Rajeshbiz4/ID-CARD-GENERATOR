@@ -29,6 +29,7 @@ export function SchoolDashboard({user,onLogout}){
       <Grid item xs={12} md={3}><StatCard label="Generated" value={data.generatedCards} icon={<BadgeRounded/>} accent="#0ea5e9"/></Grid>
       <Grid item xs={12} md={3}><StatCard label="Pending" value={data.pendingCards} icon={<BadgeRounded/>} accent="#f59e0b"/></Grid>
       <Grid item xs={12} md={3}><StatCard label="Custom Templates" value={data.customTemplates} icon={<PaletteRounded/>} accent="#7c3aed"/></Grid>
+      <Grid item xs={12} md={3}><StatCard label="ID Card Balance" value={data.idCardRemaining ?? 0} icon={<BadgeRounded/>} accent="#10b981"/></Grid>
     </Grid>
   </Layout>
 }

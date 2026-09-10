@@ -76,6 +76,20 @@ const schoolSchema = new Schema(
       type: String,
       default: "2026-2027",
     },
+
+    // ID-card generation/download quota.
+    // New schools start with 20 credits. Admin can increase/update the limit.
+    idCardLimit: {
+      type: Number,
+      default: 20,
+      min: 0,
+    },
+    idCardsUsed: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     status: {
       type: String,
       enum: ["ACTIVE", "INACTIVE"],

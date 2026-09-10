@@ -1,12 +1,13 @@
 {
   "name": "school-id-card-generator-api",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "node --watch src/server.js",
     "start": "node src/server.js",
-    "seed": "node src/seed.js"
+    "seed": "node src/seed.js",
+    "reset-admin-password": "node src/resetAdminPassword.js"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",

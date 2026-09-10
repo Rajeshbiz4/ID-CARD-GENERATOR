@@ -204,6 +204,54 @@ function customSlug(
   ).slice(-6)}-${Date.now()}`;
 }
 
+const DEFAULT_ID_CARD_LIMIT = 20;
+
+function quotaData(school) {
+  const limit =
+    Number.isFinite(Number(school?.idCardLimit))
+      ? Math.max(0, Number(school.idCardLimit))
+      : DEFAULT_ID_CARD_LIMIT;
+
+  const used =
+    Number.isFinite(Number(school?.idCardsUsed))
+      ? Math.max(0, Number(school.idCardsUsed))
+      : 0;
+
+  return {
+    limit,
+    used,
+    remaining: Math.max(0, limit - used),
+  };
+}
+
+async function ensureSchoolQuota(schoolId) {
+  if (!schoolId) return null;
+
+  await School.updateOne(
+    { _id: schoolId, idCardLimit: { $exists: false } },
+    { $set: { idCardLimit: DEFAULT_ID_CARD_LIMIT } }
+  );
+
+  await School.updateOne(
+    { _id: schoolId, idCardsUsed: { $exists: false } },
+    { $set: { idCardsUsed: 0 } }
+  );
+
+  return School.findById(schoolId).lean();
+}
+
+async function ensureAllSchoolQuotas() {
+  await School.updateMany(
+    { idCardLimit: { $exists: false } },
+    { $set: { idCardLimit: DEFAULT_ID_CARD_LIMIT } }
+  );
+
+  await School.updateMany(
+    { idCardsUsed: { $exists: false } },
+    { $set: { idCardsUsed: 0 } }
+  );
+}
+
 /* -------------------------------------------------------------------------- */
 /* Public                                                                     */
 /* -------------------------------------------------------------------------- */
@@ -212,7 +260,7 @@ app.get("/", (req, res) => {
   return ok(res, {
     application:
       "School ID Card Generator",
-    version: "2.0.0",
+    version: "2.5.0",
   });
 });
 
@@ -487,6 +535,8 @@ app.get(
   "/api/admin/schools",
   role("ADMIN"),
   async (req, res) => {
+    await ensureAllSchoolQuotas();
+
     const schools =
       await School.find()
         .sort({
@@ -496,7 +546,10 @@ app.get(
 
     return ok(
       res,
-      schools
+      schools.map((school) => ({
+        ...school,
+        idCardQuota: quotaData(school),
+      }))
     );
   }
 );
@@ -589,6 +642,8 @@ app.post(
         city,
         state,
         pinCode,
+        idCardLimit: DEFAULT_ID_CARD_LIMIT,
+        idCardsUsed: 0,
       });
 
     try {
@@ -673,6 +728,45 @@ app.patch(
   }
 );
 
+app.patch(
+  "/api/admin/schools/:id/id-card-limit",
+  role("ADMIN"),
+  async (req, res) => {
+    const requestedLimit = Number(req.body.limit);
+
+    if (!Number.isInteger(requestedLimit) || requestedLimit < 0) {
+      return fail(res, "ID card limit must be a whole number of 0 or more");
+    }
+
+    const current = await ensureSchoolQuota(req.params.id);
+
+    if (!current) {
+      return fail(res, "School not found", 404);
+    }
+
+    const currentQuota = quotaData(current);
+
+    if (requestedLimit < currentQuota.used) {
+      return fail(
+        res,
+        `Limit cannot be lower than used cards (${currentQuota.used})`
+      );
+    }
+
+    const school = await School.findByIdAndUpdate(
+      req.params.id,
+      { idCardLimit: requestedLimit },
+      { new: true }
+    ).lean();
+
+    return ok(
+      res,
+      { ...school, idCardQuota: quotaData(school) },
+      "ID card limit updated"
+    );
+  }
+);
+
 /* -------------------------------------------------------------------------- */
 /* School dashboard/profile                                                   */
 /* -------------------------------------------------------------------------- */
@@ -681,8 +775,9 @@ app.get(
   "/api/school/dashboard",
   role("SCHOOL"),
   async (req, res) => {
-    const schoolId =
-      req.auth.schoolId;
+    const schoolId = req.auth.schoolId;
+
+    await ensureSchoolQuota(schoolId);
 
     const [
       school,
@@ -691,24 +786,17 @@ app.get(
       pendingCards,
       customTemplates,
     ] = await Promise.all([
-      School.findById(
-        schoolId
-      ).lean(),
+      School.findById(schoolId).lean(),
+      Student.countDocuments({ schoolId, isDeleted: false }),
       Student.countDocuments({
         schoolId,
         isDeleted: false,
+        cardStatus: "GENERATED",
       }),
       Student.countDocuments({
         schoolId,
         isDeleted: false,
-        cardStatus:
-          "GENERATED",
-      }),
-      Student.countDocuments({
-        schoolId,
-        isDeleted: false,
-        cardStatus:
-          "PENDING",
+        cardStatus: "PENDING",
       }),
       Template.countDocuments({
         schoolId,
@@ -717,20 +805,84 @@ app.get(
       }),
     ]);
 
+    const quota = quotaData(school);
+
     return ok(res, {
-      schoolName:
-        school?.name,
-      schoolCode:
-        school?.schoolCode,
-      academicYear:
-        school?.academicYear,
+      schoolName: school?.name,
+      schoolCode: school?.schoolCode,
+      academicYear: school?.academicYear,
       totalStudents,
-      activeStudents:
-        totalStudents,
+      activeStudents: totalStudents,
       generatedCards,
       pendingCards,
       customTemplates,
+      idCardLimit: quota.limit,
+      idCardsUsed: quota.used,
+      idCardRemaining: quota.remaining,
     });
+  }
+);
+
+app.get(
+  "/api/school/id-card-quota",
+  role("SCHOOL"),
+  async (req, res) => {
+    const school = await ensureSchoolQuota(req.auth.schoolId);
+
+    if (!school) {
+      return fail(res, "School not found", 404);
+    }
+
+    return ok(res, quotaData(school));
+  }
+);
+
+app.post(
+  "/api/school/id-card-quota/consume",
+  role("SCHOOL"),
+  async (req, res) => {
+    const count = Number(req.body.count ?? 1);
+
+    if (!Number.isInteger(count) || count < 1 || count > 500) {
+      return fail(res, "Invalid ID card count");
+    }
+
+    await ensureSchoolQuota(req.auth.schoolId);
+
+    // Atomic update: only consume if enough balance remains at that moment.
+    const school = await School.findOneAndUpdate(
+      {
+        _id: req.auth.schoolId,
+        $expr: {
+          $gte: [
+            { $subtract: ["$idCardLimit", "$idCardsUsed"] },
+            count,
+          ],
+        },
+      },
+      { $inc: { idCardsUsed: count } },
+      { new: true }
+    ).lean();
+
+    if (!school) {
+      const current = await School.findById(req.auth.schoolId).lean();
+
+      if (!current) {
+        return fail(res, "School not found", 404);
+      }
+
+      const quota = quotaData(current);
+
+      return res.status(403).json({
+        success: false,
+        message:
+          "ID card balance is exhausted. Please contact the administrator to increase the limit.",
+        errors: [],
+        data: quota,
+      });
+    }
+
+    return ok(res, quotaData(school), "ID card balance updated");
   }
 );
 

@@ -101,6 +101,15 @@ export default function IdCardsPage({
     setError,
   ] = useState("");
 
+  const [
+    quota,
+    setQuota,
+  ] = useState({
+    limit: 20,
+    used: 0,
+    remaining: 0,
+  });
+
   useEffect(() => {
     Promise.all([
       api.get("/students"),
@@ -111,6 +120,9 @@ export default function IdCardsPage({
       api.get(
         "/school/template-settings"
       ),
+      api.get(
+        "/school/id-card-quota"
+      ),
     ])
       .then(
         ([
@@ -118,6 +130,7 @@ export default function IdCardsPage({
           schoolResponse,
           templatesResponse,
           settingsResponse,
+          quotaResponse,
         ]) => {
           setStudents(
             studentsResponse
@@ -138,6 +151,15 @@ export default function IdCardsPage({
           setSettings(
             settingsResponse
               .data.data || {}
+          );
+
+          setQuota(
+            quotaResponse
+              .data.data || {
+                limit: 20,
+                used: 0,
+                remaining: 0,
+              }
           );
 
           if (
@@ -214,6 +236,21 @@ export default function IdCardsPage({
       }
     };
 
+  const consumeDownloadCredit =
+    async () => {
+      const response =
+        await api.post(
+          "/school/id-card-quota/consume",
+          { count: 1 }
+        );
+
+      const updatedQuota =
+        response.data.data;
+
+      setQuota(updatedQuota);
+      return updatedQuota;
+    };
+
   const capture =
     async () => {
       await new Promise(
@@ -240,6 +277,8 @@ export default function IdCardsPage({
       try {
         const canvas =
           await capture();
+
+        await consumeDownloadCredit();
 
         const link =
           document.createElement(
@@ -273,6 +312,8 @@ export default function IdCardsPage({
       try {
         const canvas =
           await capture();
+
+        await consumeDownloadCredit();
 
         const portrait =
           template.orientation !==
@@ -347,6 +388,19 @@ export default function IdCardsPage({
           {error}
         </Alert>
       )}
+
+      <Alert
+        severity={
+          quota.remaining === 0
+            ? "error"
+            : quota.remaining <= 5
+            ? "warning"
+            : "info"
+        }
+        sx={{ mb: 2 }}
+      >
+        ID card balance: <strong>{quota.remaining}</strong> remaining out of {quota.limit}. Each PNG or PDF download uses 1 credit.
+      </Alert>
 
       <Grid
         container
@@ -452,7 +506,8 @@ export default function IdCardsPage({
                   }
                   disabled={
                     !student ||
-                    !template
+                    !template ||
+                    quota.remaining <= 0
                   }
                   onClick={
                     downloadPng
@@ -468,7 +523,8 @@ export default function IdCardsPage({
                   }
                   disabled={
                     !student ||
-                    !template
+                    !template ||
+                    quota.remaining <= 0
                   }
                   onClick={
                     downloadPdf

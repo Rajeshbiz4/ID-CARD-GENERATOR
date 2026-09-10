@@ -13,12 +13,13 @@ await ensureSystemTemplates();
 await ensureStudentIndexes();
 
 const adminEmail = "admin@idcard.local";
+const adminPassword = process.env.ADMIN_PASSWORD || "Atharva@25";
 
 if (!(await User.exists({ email: adminEmail }))) {
   await User.create({
     name: "Platform Admin",
     email: adminEmail,
-    passwordHash: await bcrypt.hash("Admin@123", 12),
+    passwordHash: await bcrypt.hash(adminPassword, 12),
     role: "ADMIN",
     status: "ACTIVE",
   });

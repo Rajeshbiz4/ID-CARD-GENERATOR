@@ -1,21 +1,75 @@
-LOGIN PAGE - FIT SCREEN / NO DESKTOP SCROLL
+ID CARD GENERATOR v2.5 - QUOTA + ADMIN PASSWORD
+CHANGED FILES ONLY
 
-Replace only:
-frontend/src/pages/LoginPage.jsx
+Replace the files in this ZIP over your latest project.
 
-Changes:
-- Desktop login page now uses 100dvh.
-- Vertical overflow is hidden on desktop.
-- Main section uses flex: 1 with minHeight: 0.
-- Header, content card and footer spacing reduced slightly.
-- Login card is constrained to the available viewport.
-- No browser vertical scrollbar should appear at normal desktop resolutions.
-- Mobile/small screens still allow natural scrolling when content cannot fit.
-- Login/authentication/API logic is unchanged.
+ID CARD LIMIT
+-------------
+- Every NEW school gets:
+    Total limit = 20
+    Used = 0
+    Remaining = 20
 
-After copying:
-cd frontend
-npm run dev
+- Existing schools that do not have quota fields are initialized automatically
+  with limit 20 and used 0.
 
-Then hard refresh:
-Ctrl + Shift + R
+ADMIN -> SCHOOLS
+----------------
+The list now shows:
+- ID Limit
+- Used
+- Remaining
+
+Use the edit icon in the Actions column to update the TOTAL limit.
+
+Example:
+  Current total limit: 20
+  Used: 12
+  Set new total limit: 100
+  Remaining: 88
+
+The total limit cannot be set below the already-used count.
+
+SCHOOL DASHBOARD
+----------------
+A new "ID Card Balance" card shows the remaining credits.
+
+GENERATE / DOWNLOAD
+-------------------
+- Live preview = 0 credits.
+- Download PNG = 1 credit.
+- Download PDF = 1 credit.
+- Quota is consumed on the BACKEND before the browser starts the download.
+- If balance is 0, the download buttons are disabled.
+- Backend also rejects requests when the balance is exhausted.
+- MongoDB uses an atomic conditional update to protect the final credits from
+  concurrent download requests.
+
+ADMIN PASSWORD
+--------------
+New admin seeds use ADMIN_PASSWORD when provided; otherwise the requested
+fallback password is used.
+
+For an EXISTING admin account run once:
+
+  cd backend
+  npm run reset-admin-password
+
+RUN AFTER REPLACING
+-------------------
+Backend:
+  cd backend
+  npm install
+  npm run reset-admin-password
+  npm run dev
+
+Frontend:
+  cd frontend
+  npm run dev
+
+Then:
+  Ctrl + Shift + R
+
+No existing student CRUD, school profile, template, Marathi typing, image/GridFS,
+custom-template, authentication, PDF/PNG rendering, loader or routing
+functionality is removed.
