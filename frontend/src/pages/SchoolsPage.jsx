@@ -5,11 +5,17 @@ import { DataGrid } from "@mui/x-data-grid";
 import Layout from "../Layout";
 import { PageHeader } from "../ui";
 import { api,errorMessage } from "../api";
+import {
+  MarathiTextField,
+  TypingLanguageBar,
+  useTypingLanguage,
+} from "../MarathiTyping";
 
 const blank={name:"",schoolCode:"",contactPersonName:"",email:"",mobile:"",address:"",city:"",state:"",pinCode:"",password:"School@123"};
 
 export default function SchoolsPage({user,onLogout}){
   const [rows,setRows]=useState([]),[open,setOpen]=useState(false),[form,setForm]=useState(blank),[error,setError]=useState("");
+  const [typingLanguage,setTypingLanguage]=useTypingLanguage();
   const load=()=>api.get("/admin/schools").then(r=>setRows(r.data.data));
   useEffect(()=>{load()},[]);
 
@@ -39,11 +45,26 @@ export default function SchoolsPage({user,onLogout}){
       <DialogTitle>Register school</DialogTitle>
       <DialogContent dividers>
         {error&&<Alert severity="error" sx={{mb:2}}>{error}</Alert>}
+        <TypingLanguageBar value={typingLanguage} onChange={setTypingLanguage}/>
         <Grid container spacing={2}>
           {[["name","School name",8],["schoolCode","School code",4],["contactPersonName","Contact person",6],["email","Login email",6],
             ["mobile","Mobile",6],["password","Temporary password",6],["address","Address",12],["city","City",4],["state","State",4],["pinCode","PIN",4]
           ].map(([key,label,cols])=><Grid item xs={12} md={cols} key={key}>
-            <TextField fullWidth label={label} value={form[key]} onChange={e=>setForm({...form,[key]:e.target.value})}/>
+            {["name","contactPersonName","address","city","state"].includes(key) ? (
+              <MarathiTextField
+                typingLanguage={typingLanguage}
+                label={label}
+                value={form[key]}
+                onValueChange={value=>setForm({...form,[key]:value})}
+              />
+            ) : (
+              <TextField
+                fullWidth
+                label={label}
+                value={form[key]}
+                onChange={e=>setForm({...form,[key]:e.target.value})}
+              />
+            )}
           </Grid>)}
         </Grid>
       </DialogContent>

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 160">
+  <rect width="520" height="160" fill="white" fill-opacity="0"/>
+  <path d="M45 96 C85 45, 118 123, 160 73 C190 39, 214 109, 252 76 C286 48, 314 105, 352 69"
+        fill="none" stroke="#274690" stroke-width="6" stroke-linecap="round"/>
+  <line x1="40" y1="116" x2="480" y2="116" stroke="#64748b" stroke-width="2"/>
+  <text x="260" y="145"
+        text-anchor="middle"
+        font-family="Nirmala UI, Noto Sans Devanagari, Mangal, Arial, sans-serif"
+        font-size="24"
+        font-weight="700"
+        fill="#334155">Principal Signature / मुख्याध्यापक सही</text>
+</svg>

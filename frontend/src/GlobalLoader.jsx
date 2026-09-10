@@ -17,7 +17,7 @@ import {
   subscribeLoading,
 } from "./loaderStore";
 
-const MIN_VISIBLE_MS = 700;
+const MIN_VISIBLE_MS = 850;
 
 export default function GlobalLoader() {
   const initial =

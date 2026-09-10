@@ -1,69 +1,112 @@
+import {
+  useLayoutEffect,
+  useRef,
+} from "react";
+
 import { Box } from "@mui/material";
 import { QRCodeSVG } from "qrcode.react";
-import StoredImage, { useStoredImage } from "./StoredImage";
 
-const DEFAULT_LOGO =
+import StoredImage, {
+  useStoredImage,
+} from "./StoredImage";
+
+const SAMPLE_LOGO =
   "/sample-school-logo.png";
 
-const DEFAULT_STUDENT =
+const SAMPLE_STUDENT =
   "/sample-student-profile.png";
 
-function valueFor(element, student, school) {
+const EMPTY_LOGO =
+  "/default-school-logo.svg";
+
+const EMPTY_STUDENT =
+  "/default-student-photo.svg";
+
+const DEFAULT_SIGNATURE =
+  "/default-principal-signature.svg";
+
+const DEVANAGARI_FONT =
+  '"Nirmala UI","Noto Sans Devanagari","Mangal","Segoe UI",Arial,sans-serif';
+
+function getValue(
+  element,
+  student,
+  school
+) {
+  const classDivision = [
+    student?.className,
+    student?.division,
+  ]
+    .filter(Boolean)
+    .join("-");
+
   const values = {
     schoolName:
-      school?.name ||
-      "Green Valley Public School",
+      school?.name || "",
 
     schoolTagline:
-      school?.tagline ||
-      "Learn • Grow • Achieve",
+      school?.tagline || "",
+
+    schoolRegistrationNo:
+      school?.registrationNo ||
+      school?.schoolCode ||
+      "",
+
+    principalName:
+      school?.principalName ||
+      "",
 
     studentName:
-      student?.name ||
-      "Aarav Sharma",
+      student?.name || "",
 
     admissionNo:
       student?.admissionNo ||
-      "GVPS001",
+      "",
 
     rollNo:
-      student?.rollNo ||
-      "12",
+      student?.rollNo || "",
 
-    classDivision:
-      `${student?.className || "6"}-${student?.division || "A"}`,
+    classDivision,
 
     dob:
       student?.dob
         ? new Date(
             student.dob
           ).toLocaleDateString(
-            "en-GB"
+            "en-IN"
           )
-        : "12/08/2014",
+        : "",
 
     bloodGroup:
       student?.bloodGroup ||
-      "O+",
+      "",
 
     academicYear:
       student?.academicYear ||
       school?.academicYear ||
-      "2026-2027",
+      "",
 
     parentName:
       student?.parentName ||
-      "Rajesh Sharma",
+      "",
 
     parentMobile:
       student?.parentMobile ||
-      "9876543210",
+      "",
 
     customText:
-      element.customText || "",
+      element.customText ||
+      "",
   };
 
-  return `${element.prefix || ""}${values[element.type] ?? ""}`;
+  const value =
+    values[element.type] ?? "";
+
+  if (!value) {
+    return "";
+  }
+
+  return `${element.prefix || ""}${value}`;
 }
 
 function Decoration({
@@ -84,9 +127,7 @@ function Decoration({
     pointerEvents: "none",
   };
 
-  if (
-    item.type === "circle"
-  ) {
+  if (item.type === "circle") {
     return (
       <Box
         sx={{
@@ -100,10 +141,15 @@ function Decoration({
   return <Box sx={common} />;
 }
 
-function textStyle(
+function elementStyle(
   element,
   scale
 ) {
+  const multiline =
+    element.multiline === true ||
+    element.type === "schoolName" ||
+    element.type === "studentName";
+
   return {
     position: "absolute",
     left: element.x * scale,
@@ -112,15 +158,20 @@ function textStyle(
     height: element.height * scale,
     px: 0.35 * scale,
     overflow: "hidden",
-    whiteSpace: "nowrap",
-    textOverflow: "ellipsis",
+    maxWidth: "100%",
+    maxHeight: "100%",
+    boxSizing: "border-box",
     color: element.color,
     bgcolor:
       element.backgroundColor ||
       "transparent",
+    fontFamily: DEVANAGARI_FONT,
     fontSize:
       element.fontSize * scale,
-    lineHeight: 1.15,
+    lineHeight:
+      element.lineHeight || 1.12,
+    letterSpacing:
+      `${(element.letterSpacing || 0) * scale}px`,
     fontWeight:
       element.fontWeight,
     textAlign:
@@ -147,7 +198,86 @@ function textStyle(
           "right"
         ? "flex-end"
         : "flex-start",
+    whiteSpace:
+      multiline
+        ? "normal"
+        : "nowrap",
+    overflowWrap:
+      multiline
+        ? "anywhere"
+        : "normal",
+    wordBreak:
+      multiline
+        ? "break-word"
+        : "normal",
   };
+}
+
+function AutoFitText({
+  element,
+  scale,
+  children,
+}) {
+  const ref = useRef(null);
+
+  useLayoutEffect(() => {
+    const node = ref.current;
+
+    if (!node) {
+      return;
+    }
+
+    const maxSize =
+      Math.max(
+        1,
+        element.fontSize * scale
+      );
+
+    const minSize =
+      Math.max(
+        5,
+        (element.minFontSize || 7) *
+          scale
+      );
+
+    let size = maxSize;
+
+    node.style.fontSize =
+      `${size}px`;
+
+    while (
+      size > minSize &&
+      (
+        node.scrollWidth >
+          node.clientWidth + 1 ||
+        node.scrollHeight >
+          node.clientHeight + 1
+      )
+    ) {
+      size -= 0.5;
+      node.style.fontSize =
+        `${size}px`;
+    }
+  }, [
+    children,
+    element.fontSize,
+    element.minFontSize,
+    element.width,
+    element.height,
+    scale,
+  ]);
+
+  return (
+    <Box
+      ref={ref}
+      sx={elementStyle(
+        element,
+        scale
+      )}
+    >
+      {children}
+    </Box>
+  );
 }
 
 function Element({
@@ -155,9 +285,10 @@ function Element({
   student,
   school,
   scale,
+  previewMode,
 }) {
   const style =
-    textStyle(
+    elementStyle(
       element,
       scale
     );
@@ -169,11 +300,17 @@ function Element({
     const fallback = (
       <Box
         component="img"
-        src={DEFAULT_STUDENT}
-        alt="Sample student profile"
+        src={
+          previewMode
+            ? SAMPLE_STUDENT
+            : EMPTY_STUDENT
+        }
+        alt=""
         sx={{
           ...style,
-          objectFit: "cover",
+          objectFit:
+            element.objectFit ||
+            "cover",
           objectPosition:
             "center top",
         }}
@@ -206,12 +343,18 @@ function Element({
     const fallback = (
       <Box
         component="img"
-        src={DEFAULT_LOGO}
-        alt="Sample school logo"
+        src={
+          previewMode
+            ? SAMPLE_LOGO
+            : EMPTY_LOGO
+        }
+        alt=""
         sx={{
           ...style,
-          objectFit: "contain",
-          p: 0.3 * scale,
+          objectFit:
+            "contain",
+          p:
+            0.3 * scale,
         }}
       />
     );
@@ -224,8 +367,10 @@ function Element({
         alt="School logo"
         sx={{
           ...style,
-          objectFit: "contain",
-          p: 0.3 * scale,
+          objectFit:
+            "contain",
+          p:
+            0.3 * scale,
         }}
         fallback={fallback}
       />
@@ -236,17 +381,43 @@ function Element({
     element.type ===
     "principalSignature"
   ) {
+    const signatureStyle = {
+      ...style,
+      objectFit: "contain",
+      objectPosition:
+        "center center",
+      width: style.width,
+      height: style.height,
+      p: 0,
+    };
+
+    const fallback = (
+      <Box
+        component="img"
+        src={
+          DEFAULT_SIGNATURE
+        }
+        alt="Principal signature placeholder"
+        sx={
+          signatureStyle
+        }
+      />
+    );
+
     return (
       <StoredImage
         fileId={
           school
             ?.principalSignatureFileId
         }
+        processor="signature"
         alt="Principal signature"
-        sx={{
-          ...style,
-          objectFit: "contain",
-        }}
+        sx={
+          signatureStyle
+        }
+        fallback={
+          fallback
+        }
       />
     );
   }
@@ -255,7 +426,7 @@ function Element({
     element.type ===
     "qrCode"
   ) {
-    const value =
+    const qrValue =
       JSON.stringify({
         schoolCode:
           school?.schoolCode ||
@@ -285,17 +456,15 @@ function Element({
           ...style,
           display: "grid",
           placeItems: "center",
-          overflow: "hidden",
           bgcolor: "#ffffff",
           p: 0.5 * scale,
         }}
       >
         <QRCodeSVG
-          value={value}
+          value={qrValue}
           size={Math.max(
             20,
-            size -
-              6 * scale
+            size - 6 * scale
           )}
         />
       </Box>
@@ -303,14 +472,118 @@ function Element({
   }
 
   return (
-    <Box sx={style}>
-      {valueFor(
+    <AutoFitText
+      element={element}
+      scale={scale}
+    >
+      {getValue(
         element,
         student,
         school
       )}
-    </Box>
+    </AutoFitText>
   );
+}
+
+
+function boxesOverlap(a, b, gap = 4) {
+  return !(
+    a.x + a.width + gap <= b.x ||
+    b.x + b.width + gap <= a.x ||
+    a.y + a.height + gap <= b.y ||
+    b.y + b.height + gap <= a.y
+  );
+}
+
+function findSafeSignatureBox(template, elements) {
+  const portrait = template.orientation !== "landscape";
+  const width = template.width || (portrait ? 330 : 520);
+  const height = template.height || (portrait ? 520 : 330);
+  const signatureWidth = 200;
+  const signatureHeight = 100;
+  const footerReserve = portrait ? 22 : 8;
+
+  const bottomY =
+    height -
+    signatureHeight -
+    footerReserve;
+
+  const candidates = portrait
+    ? [
+        { x: width - signatureWidth - 10, y: bottomY },
+        { x: 10, y: bottomY },
+        { x: Math.round((width - signatureWidth) / 2), y: bottomY },
+        { x: width - signatureWidth - 10, y: Math.max(110, bottomY - 110) },
+        { x: 10, y: Math.max(110, bottomY - 110) },
+      ]
+    : [
+        { x: width - signatureWidth - 10, y: bottomY },
+        { x: 10, y: bottomY },
+        { x: Math.round((width - signatureWidth) / 2), y: bottomY },
+        { x: width - signatureWidth - 10, y: Math.max(76, bottomY - 104) },
+        { x: 10, y: Math.max(76, bottomY - 104) },
+      ];
+
+  const used = elements
+    .filter((element) => element.type !== "academicYear")
+    .map((element) => ({
+      x: Number(element.x || 0),
+      y: Number(element.y || 0),
+      width: Number(element.width || 0),
+      height: Number(element.height || 0),
+    }));
+
+  const safe = candidates.find((candidate) =>
+    used.every((box) => !boxesOverlap(candidate, box, 3))
+  );
+
+  return safe || candidates[0];
+}
+
+function renderElementsForTemplate(template) {
+  const elements = [...(template.elements || [])];
+
+  if (
+    elements.some(
+      (element) => element.type === "principalSignature"
+    )
+  ) {
+    return elements;
+  }
+
+  if (template.type !== "CUSTOM") {
+    return elements;
+  }
+
+  const portrait = template.orientation !== "landscape";
+  const position = findSafeSignatureBox(template, elements);
+
+  return [
+    ...elements,
+    {
+      id: "__autoPrincipalSignature",
+      type: "principalSignature",
+      x: position.x,
+      y: position.y,
+      width: 200,
+      height: 100,
+      fontSize: 8,
+      minFontSize: 6,
+      fontWeight: 500,
+      color: "#334155",
+      backgroundColor: "transparent",
+      textAlign: "center",
+      borderWidth: 0,
+      borderColor: "transparent",
+      borderRadius: 0,
+      objectFit: "contain",
+      prefix: "",
+      customText: "",
+      multiline: false,
+      lineHeight: 1,
+      letterSpacing: 0,
+    },
+  ];
 }
 
 export default function TemplateRenderer({
@@ -321,6 +594,7 @@ export default function TemplateRenderer({
   interactive = false,
   selectedId,
   onElementPointerDown,
+  previewMode = false,
 }) {
   const backgroundState =
     useStoredImage(
@@ -345,14 +619,18 @@ export default function TemplateRenderer({
     template.height || 520;
 
   const width =
-    targetWidth ||
-    baseWidth;
+    targetWidth || baseWidth;
 
   const scale =
     width / baseWidth;
 
   const height =
     baseHeight * scale;
+
+  const renderedElements =
+    renderElementsForTemplate(
+      template
+    );
 
   return (
     <Box
@@ -370,12 +648,13 @@ export default function TemplateRenderer({
             ? `url(${backgroundSrc})`
             : "none",
         backgroundSize: "cover",
-        backgroundPosition:
-          "center",
+        backgroundPosition: "center",
         border:
           "1px solid #cbd5e1",
         boxShadow:
           "0 16px 36px rgba(15,23,42,.12)",
+        fontFamily:
+          DEVANAGARI_FONT,
       }}
     >
       {(template.decorations ||
@@ -389,70 +668,69 @@ export default function TemplateRenderer({
         )
       )}
 
-      {(template.elements ||
-        []).map((element) => (
-        <Box
-          key={element.id}
-          onPointerDown={
-            interactive
-              ? (event) =>
-                  onElementPointerDown?.(
-                    event,
-                    element,
-                    scale
-                  )
-              : undefined
-          }
-          sx={{
-            position: "absolute",
-            left:
-              element.x * scale,
-            top:
-              element.y * scale,
-            width:
-              element.width *
-              scale,
-            height:
-              element.height *
-              scale,
-            cursor:
-              interactive
-                ? "move"
-                : "default",
-            outline:
-              interactive &&
-              selectedId ===
-                element.id
-                ? "2px solid #4f46e5"
-                : "none",
-            zIndex: 5,
-          }}
-        >
+      {renderedElements.map(
+        (element) => (
           <Box
+            key={element.id}
+            onPointerDown={
+              interactive
+                ? (event) =>
+                    onElementPointerDown?.(
+                      event,
+                      element,
+                      scale
+                    )
+                : undefined
+            }
             sx={{
-              position:
-                "absolute",
+              position: "absolute",
               left:
-                -element.x *
-                scale,
+                element.x * scale,
               top:
-                -element.y *
-                scale,
-              width,
-              height,
-              pointerEvents:
-                "none",
+                element.y * scale,
+              width:
+                element.width * scale,
+              height:
+                element.height * scale,
+              cursor:
+                interactive
+                  ? "move"
+                  : "default",
+              outline:
+                interactive &&
+                selectedId ===
+                  element.id
+                  ? "2px solid #4f46e5"
+                  : "none",
+              zIndex: 5,
             }}
           >
-            <Element
-              element={element}
-              student={student}
-              school={school}
-              scale={scale}
-            />
+            <Box
+              sx={{
+                position: "absolute",
+                left:
+                  -element.x * scale,
+                top:
+                  -element.y * scale,
+                width,
+                height,
+                pointerEvents:
+                  "none",
+              }}
+            >
+              <Element
+                element={element}
+                student={student}
+                school={school}
+                scale={scale}
+                previewMode={
+                  previewMode
+                }
+              />
+            </Box>
           </Box>
-        </Box>
-      ))}
+        )
+      )}
     </Box>
   );
 }

@@ -134,7 +134,7 @@ export default function LoginPage({ onLogin }) {
           >
             {[
               "Secure school access",
-              "20 professional layouts",
+              "100 professional layouts",
               "Custom template designer",
             ].map((label) => (
               <Stack

@@ -1,0 +1,117 @@
+LATEST CONSOLIDATED REQUIREMENTS - v2.0
+
+This patch intentionally contains all files required for the requested changes,
+including loader wiring and default preview assets.
+
+Implemented:
+
+1. Marathi / Unicode
+   - School/student/custom-template text may be entered in Marathi.
+   - MongoDB stores the exact Unicode text.
+   - Devanagari-compatible font stack is used for UI and cards.
+   - Custom text and template fields support Marathi.
+   - PNG/PDF exports render the card via html2canvas, preserving rendered Marathi.
+
+2. Minimal mandatory student fields
+   - Only Student Name is required.
+   - Admission no., class, division, roll no., DOB, blood group,
+     parent/mobile, address and student photo are optional.
+   - Existing admission-number unique index is migrated so blank admission
+     numbers do not conflict.
+
+3. 50 predefined templates
+   - Exactly 50 SYSTEM templates.
+   - 30 portrait, 20 landscape.
+   - Different layouts/categories, not only color swaps.
+   - Auto-fit / multiline school and student names.
+   - Templates are automatically upserted on backend startup.
+   - Existing CUSTOM templates are preserved.
+
+4. Yellow Marathi reference-style templates
+   - Yellow school header.
+   - Center school logo.
+   - School name.
+   - UDISE / Registration No.
+   - ओळखपत्र.
+   - Student photo.
+   - Yellow student-name band.
+   - जन्मतारीख.
+   - रजिस्टर नंबर.
+   - मोबाईल नंबर.
+   - Principal signature.
+   - Principal name / मुख्याध्यापक.
+   - Academic year.
+   - Portrait and landscape Marathi variants are included.
+
+5. School profile / signature
+   - UDISE / Registration No. field.
+   - Principal Name field.
+   - Principal Signature upload.
+   - Signature normalized before upload and rendered with object-fit contain.
+
+6. Default template images
+   - Templates page uses the actual first student and school profile.
+   - If uploaded logo/photo is missing, sample school logo and sample student
+     profile image are shown in the template preview.
+   - Neutral placeholders remain available outside preview mode.
+
+7. Image normalization
+   - School logo: 600x600 PNG, contain + padding.
+   - Student profile: 600x750 PNG, center crop.
+   - Signature: 1000x300 PNG, contain.
+   - Custom template backgrounds normalized for portrait/landscape.
+   - MongoDB GridFS storage preserved.
+
+8. Loader
+   - Global loader mounted in main.jsx.
+   - Axios interceptor starts/stops it for server calls.
+   - Route navigation also triggers visible loader feedback.
+   - Minimum loader visibility increased so fast calls are visible.
+   - GridFS image calls use a local image spinner to avoid full-page flashing.
+
+9. CORS
+   - Backend currently allows all origins as explicitly requested.
+   - Authorization header and common methods are allowed.
+
+10. Existing features kept
+   - ADMIN / SCHOOL authentication.
+   - School registration/list/status.
+   - Dashboard.
+   - Student CRUD.
+   - School profile.
+   - GridFS images.
+   - Custom Template Designer.
+   - Template selection.
+   - PNG/PDF generation.
+   - Vercel support.
+   - Square-cornered application UI.
+
+HOW TO APPLY
+
+Copy this ZIP over your existing project root and replace matching files.
+
+Then run backend:
+
+  cd backend
+  npm install
+  npm run dev
+
+Expected template log:
+
+  System templates ready: 50/50
+
+Then frontend:
+
+  cd frontend
+  npm install
+  npm run dev
+
+VERCEL
+
+Commit and push these changes, then redeploy both projects if backend files
+changed. No manual template seed is required; the backend upserts the 50
+SYSTEM templates automatically.
+
+IMPORTANT:
+CORS is open to all origins because that was requested. For a final public
+production release, restrict it to trusted frontend domains.

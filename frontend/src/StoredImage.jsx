@@ -10,18 +10,94 @@ import {
 
 import { api } from "./api";
 
+import {
+  normalizeSignatureBlob,
+} from "./imageProcessor";
+
+const imageCache =
+  new Map();
+
+async function fetchImage(
+  fileId,
+  processor
+) {
+  const cacheKey =
+    `${fileId}:${processor || "raw"}`;
+
+  if (
+    imageCache.has(
+      cacheKey
+    )
+  ) {
+    return imageCache.get(
+      cacheKey
+    );
+  }
+
+  const promise =
+    api
+      .get(
+        `/files/${fileId}`,
+        {
+          responseType:
+            "blob",
+          skipGlobalLoader:
+            true,
+        }
+      )
+      .then(
+        async (
+          response
+        ) => {
+          let blob =
+            response.data;
+
+          if (
+            processor ===
+            "signature"
+          ) {
+            blob =
+              await normalizeSignatureBlob(
+                blob
+              );
+          }
+
+          return URL.createObjectURL(
+            blob
+          );
+        }
+      )
+      .catch(
+        (error) => {
+          imageCache.delete(
+            cacheKey
+          );
+
+          throw error;
+        }
+      );
+
+  imageCache.set(
+    cacheKey,
+    promise
+  );
+
+  return promise;
+}
+
 export function useStoredImage(
-  fileId
+  fileId,
+  processor = null
 ) {
   const [state, setState] =
     useState({
       src: "",
-      loading: Boolean(fileId),
+      loading:
+        Boolean(fileId),
     });
 
   useEffect(() => {
     let active = true;
-    let objectUrl = "";
 
     if (!fileId) {
       setState({
@@ -37,24 +113,17 @@ export function useStoredImage(
       loading: true,
     });
 
-    api
-      .get(
-        `/files/${fileId}`,
-        {
-          responseType: "blob",
-          skipGlobalLoader: true,
+    fetchImage(
+      fileId,
+      processor
+    )
+      .then((src) => {
+        if (!active) {
+          return;
         }
-      )
-      .then((response) => {
-        if (!active) return;
-
-        objectUrl =
-          URL.createObjectURL(
-            response.data
-          );
 
         setState({
-          src: objectUrl,
+          src,
           loading: false,
         });
       })
@@ -69,14 +138,11 @@ export function useStoredImage(
 
     return () => {
       active = false;
-
-      if (objectUrl) {
-        URL.revokeObjectURL(
-          objectUrl
-        );
-      }
     };
-  }, [fileId]);
+  }, [
+    fileId,
+    processor,
+  ]);
 
   return state;
 }
@@ -86,11 +152,15 @@ export default function StoredImage({
   alt = "",
   sx,
   fallback,
+  processor = null,
 }) {
   const {
     src,
     loading,
-  } = useStoredImage(fileId);
+  } = useStoredImage(
+    fileId,
+    processor
+  );
 
   if (loading) {
     return (
@@ -98,18 +168,23 @@ export default function StoredImage({
         sx={{
           ...sx,
           display: "grid",
-          placeItems: "center",
-          bgcolor: "#eef2f7",
+          placeItems:
+            "center",
+          bgcolor:
+            "rgba(248,250,252,.85)",
         }}
       >
         <CircularProgress
-          size={18}
+          size={16}
         />
       </Box>
     );
   }
 
-  if (!src && fallback) {
+  if (
+    !src &&
+    fallback
+  ) {
     return fallback;
   }
 

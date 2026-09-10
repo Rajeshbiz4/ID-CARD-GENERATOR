@@ -1,25 +1,30 @@
 import dotenv from "dotenv";
 import bcrypt from "bcryptjs";
+
 import { connectDatabase } from "./config/database.js";
-import { Template, User } from "./models.js";
-import { SYSTEM_TEMPLATES } from "./systemTemplates.js";
+import { ensureSystemTemplates } from "./systemTemplateBootstrap.js";
+import { ensureStudentIndexes } from "./studentIndexes.js";
+import { User } from "./models.js";
 
 dotenv.config();
+
 await connectDatabase();
+await ensureSystemTemplates();
+await ensureStudentIndexes();
 
-if(!(await User.exists({email:"admin@idcard.local"}))){
+const adminEmail = "admin@idcard.local";
+
+if (!(await User.exists({ email: adminEmail }))) {
   await User.create({
-    name:"Platform Admin",
-    email:"admin@idcard.local",
-    passwordHash:await bcrypt.hash("Admin@123",12),
-    role:"ADMIN",
-    status:"ACTIVE"
+    name: "Platform Admin",
+    email: adminEmail,
+    passwordHash: await bcrypt.hash("Admin@123", 12),
+    role: "ADMIN",
+    status: "ACTIVE",
   });
+
+  console.log("Admin created.");
 }
 
-for(const template of SYSTEM_TEMPLATES){
-  await Template.findOneAndUpdate({slug:template.slug},{$set:template},{upsert:true,new:true});
-}
-
-console.log(`${SYSTEM_TEMPLATES.length} system templates seeded.`);
+console.log("Seed complete.");
 process.exit(0);

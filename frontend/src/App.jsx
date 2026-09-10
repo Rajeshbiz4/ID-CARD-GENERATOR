@@ -66,7 +66,7 @@ export default function App() {
         () => {
           endLoading(token);
         },
-        450
+        650
       );
 
     return () => {

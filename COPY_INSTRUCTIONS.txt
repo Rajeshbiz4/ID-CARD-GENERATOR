@@ -1,47 +1,52 @@
-LOADER v3 + DEFAULT TEMPLATE PROFILE IMAGE
+v2.4 MARATHI OVERLAP + RESPONSIVE FIX
 
-Replace/add these files exactly:
+Replace these files over the latest v2.4 project:
 
-NEW
-frontend/src/loaderStore.js
-frontend/src/GlobalLoader.jsx
-frontend/public/sample-student-profile.png
-frontend/public/sample-school-logo.png
+frontend/src/MarathiTyping.jsx
+frontend/src/styles.css
+frontend/src/pages/StudentFormPage.jsx
+frontend/src/Layout.jsx
 
-REPLACE
-frontend/src/api.js
-frontend/src/main.jsx
-frontend/src/App.jsx
-frontend/src/StoredImage.jsx
-frontend/src/TemplateRenderer.jsx
-frontend/src/pages/TemplatesPage.jsx
+WHAT IS FIXED
 
-WHY LOADER WAS NOT SHOWING
-Your current project main.jsx did NOT import/mount GlobalLoader.
-Your current api.js did NOT call start/end loader functions.
+1. Marathi suggestion overlap
+- Previous high z-index only placed the suggestions above other fields.
+- It did NOT stop Class / Division / Parent fields from sitting behind the list.
+- The active Marathi field now reserves 238px below the input.
+- Therefore the next form row physically moves down while typing.
+- Suggestions no longer cover the next form fields.
+- Space collapses again after the field loses focus.
 
-THIS VERSION FIXES BOTH.
+2. Correct suggestion styles
+- Uses the transliteration package's supported:
+  suggestionsClassName
+  itemClassName
+  activeItemClassName
+- Suggestion list width follows the input width.
+- Maximum 5 suggestions.
+- Higher z-index retained.
 
-LOADER BEHAVIOR
-- Shows immediately on page navigation.
-- Shows on every normal Axios server request.
-- Minimum visible time: 700ms.
-- Concurrent requests are handled correctly.
-- Top progress bar + full-screen loading dialog.
-- GridFS image calls use a small local image spinner instead.
+3. Responsive Add Student / sidebar
+- Desktop sidebar is unchanged.
+- Below MUI md breakpoint the permanent sidebar becomes a temporary drawer.
+- A menu button appears in the top bar.
+- Page heading, language bar and form no longer get squeezed/cut beside a 260px permanent drawer.
+- Email text truncates safely on small screens.
 
-TEMPLATES PAGE
-- Loads school profile.
-- Loads first student as preview.
-- Uses actual uploaded logo/photo when available.
-- If logo is missing: uses sample-school-logo.png.
-- If student photo is missing: uses sample-student-profile.png.
-- If there are no students: sample student details + sample profile are shown.
+4. Existing functionality is unchanged
+- Student CRUD
+- English/Marathi typing
+- Photo upload
+- 100 templates
+- Signature
+- ID generation
+- GridFS
+- Authentication
 
-AFTER COPYING
+After copying:
+
 cd frontend
-npm install
 npm run dev
 
-For Vercel:
-commit these files, push, and redeploy the FRONTEND project.
+Then:
+Ctrl + Shift + R

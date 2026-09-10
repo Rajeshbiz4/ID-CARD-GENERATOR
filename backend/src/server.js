@@ -8,6 +8,7 @@ import jwt from "jsonwebtoken";
 
 import { connectDatabase } from "./config/database.js";
 import { ensureSystemTemplates } from "./systemTemplateBootstrap.js";
+import { ensureStudentIndexes } from "./studentIndexes.js";
 import {
   imageUpload,
   getOwnedImage,
@@ -30,7 +31,6 @@ const JWT_SECRET =
   process.env.JWT_SECRET ||
   "development-secret-change-before-production";
 
-
 app.use(
   helmet({
     crossOriginResourcePolicy: {
@@ -40,14 +40,24 @@ app.use(
 );
 
 const corsOptions = {
-  // Allow requests from any browser origin.
-  // `origin: true` reflects the incoming Origin header, so credentials
-  // can still be used without the invalid "* + credentials" combination.
   origin: true,
   credentials: true,
-  methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
-  exposedHeaders: ["Content-Type", "Content-Length"],
+  methods: [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+  ],
+  allowedHeaders: [
+    "Content-Type",
+    "Authorization",
+  ],
+  exposedHeaders: [
+    "Content-Type",
+    "Content-Length",
+  ],
   maxAge: 86400,
 };
 
@@ -78,6 +88,7 @@ app.use(async (req, res, next) => {
   try {
     await connectDatabase();
     await ensureSystemTemplates();
+    await ensureStudentIndexes();
     next();
   } catch (error) {
     console.error(
@@ -177,10 +188,18 @@ function customSlug(
   name,
   schoolId
 ) {
-  return `custom-${String(name)
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "")}-${String(
+  const normalizedName =
+    String(name || "template")
+      .trim()
+      .toLowerCase()
+      .normalize("NFKC")
+      .replace(/\s+/g, "-")
+      .replace(/[^\p{L}\p{N}-]+/gu, "")
+      .replace(/-+/g, "-")
+      .replace(/^-|-$/g, "") ||
+    "template";
+
+  return `custom-${normalizedName}-${String(
     schoolId
   ).slice(-6)}-${Date.now()}`;
 }
@@ -193,7 +212,7 @@ app.get("/", (req, res) => {
   return ok(res, {
     application:
       "School ID Card Generator",
-    version: "1.9.0",
+    version: "2.0.0",
   });
 });
 
@@ -528,16 +547,17 @@ app.post(
       );
     }
 
-    const generatedCode =
-      `${String(name)
-        .replace(
-          /[^a-z]/gi,
-          ""
-        )
+    const englishPrefix =
+      String(name)
+        .normalize("NFKD")
+        .replace(/[^a-z]/gi, "")
         .slice(0, 4)
-        .toUpperCase()}${String(
+        .toUpperCase();
+
+    const generatedCode =
+      `${englishPrefix || "SCH"}${String(
         Date.now()
-      ).slice(-5)}`;
+      ).slice(-6)}`;
 
     const code =
       String(
@@ -789,6 +809,66 @@ app.put(
   }
 );
 
+function normalizeOptionalString(
+  value
+) {
+  if (
+    value === undefined ||
+    value === null
+  ) {
+    return null;
+  }
+
+  const normalized =
+    String(value).trim();
+
+  return normalized || null;
+}
+
+function normalizeStudentPayload(
+  body = {}
+) {
+  const data = {
+    ...body,
+  };
+
+  [
+    "admissionNo",
+    "rollNo",
+    "className",
+    "division",
+    "bloodGroup",
+    "academicYear",
+    "parentName",
+    "parentMobile",
+    "emergencyContact",
+    "address",
+    "house",
+    "busRoute",
+  ].forEach((field) => {
+    data[field] =
+      normalizeOptionalString(
+        data[field]
+      );
+  });
+
+  data.name =
+    String(
+      data.name || ""
+    ).trim();
+
+  data.gender =
+    String(
+      data.gender || ""
+    ).trim();
+
+  if (!data.dob) {
+    data.dob = null;
+  }
+
+  return data;
+}
+
 /* -------------------------------------------------------------------------- */
 /* Students                                                                   */
 /* -------------------------------------------------------------------------- */
@@ -861,27 +941,22 @@ app.post(
   role("SCHOOL"),
   async (req, res) => {
     const data = {
-      ...req.body,
+      ...normalizeStudentPayload(
+        req.body
+      ),
       schoolId:
         req.auth.schoolId,
     };
 
-    for (const field of [
-      "name",
-      "admissionNo",
-      "rollNo",
-      "className",
-      "division",
-    ]) {
-      if (!data[field]) {
-        return fail(
-          res,
-          `${field} is required`
-        );
-      }
+    if (!data.name) {
+      return fail(
+        res,
+        "Student name is required"
+      );
     }
 
     if (
+      data.admissionNo &&
       await Student.exists({
         schoolId:
           req.auth.schoolId,
@@ -946,8 +1021,44 @@ app.put(
       schoolId:
         ignoredSchoolId,
       _id: ignoredId,
-      ...updates
+      ...rawUpdates
     } = req.body;
+
+    const updates =
+      normalizeStudentPayload(
+        rawUpdates
+      );
+
+    if (!updates.name) {
+      return fail(
+        res,
+        "Student name is required"
+      );
+    }
+
+    if (
+      updates.admissionNo
+    ) {
+      const duplicate =
+        await Student.exists({
+          _id: {
+            $ne: req.params.id,
+          },
+          schoolId:
+            req.auth.schoolId,
+          admissionNo:
+            updates.admissionNo,
+          isDeleted: false,
+        });
+
+      if (duplicate) {
+        return fail(
+          res,
+          "Admission number already exists",
+          409
+        );
+      }
+    }
 
     const student =
       await Student.findOneAndUpdate(
@@ -1459,6 +1570,7 @@ if (!process.env.VERCEL) {
   connectDatabase()
     .then(async () => {
       await ensureSystemTemplates();
+      await ensureStudentIndexes();
 
       app.listen(
         port,

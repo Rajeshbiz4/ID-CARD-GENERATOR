@@ -1,6 +1,6 @@
 {
   "name": "school-id-card-generator-web",
-  "version": "1.8.0",
+  "version": "2.4.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -14,6 +14,7 @@
     "@mui/icons-material": "^6.5.0",
     "@mui/material": "^6.5.0",
     "@mui/x-data-grid": "^7.29.9",
+    "@sarthak1407/react-transliterate": "^2.6.0",
     "axios": "^1.8.4",
     "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",

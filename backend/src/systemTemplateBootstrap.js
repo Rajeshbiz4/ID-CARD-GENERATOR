@@ -8,7 +8,7 @@ let bootstrapPromise = null;
  *
  * This is intentionally safe to run more than once:
  * - custom school templates are never touched
- * - the 20 premium system templates are upserted/updated
+ * - the 100 system templates are upserted/updated
  * - old/legacy system templates are deactivated
  *
  * This fixes Vercel deployments where `npm run seed` was not executed.
@@ -21,7 +21,7 @@ export async function ensureSystemTemplates() {
   bootstrapPromise = (async () => {
     const validSlugs = SYSTEM_TEMPLATES.map((template) => template.slug);
 
-    // Remove old predefined templates from previous versions (e.g. 21-50)
+    // Deactivate old predefined templates not in the current 100-template library
     // without touching any school-created CUSTOM template.
     await Template.updateMany(
       {
