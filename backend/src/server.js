@@ -14,6 +14,7 @@ import {
   getOwnedImage,
   openImage,
   deleteOwnedImage,
+  deleteSchoolImages,
   storeImage,
 } from "./imageStorage.js";
 import {
@@ -728,6 +729,68 @@ app.patch(
   }
 );
 
+app.delete(
+  "/api/admin/schools/:id",
+  role("ADMIN"),
+  async (req, res) => {
+    const school =
+      await School.findById(
+        req.params.id
+      ).lean();
+
+    if (!school) {
+      return fail(
+        res,
+        "School not found",
+        404
+      );
+    }
+
+    // Remove school-owned records. SYSTEM templates are not touched.
+    await Promise.all([
+      User.deleteMany({
+        schoolId:
+          school._id,
+        role: "SCHOOL",
+      }),
+      Student.deleteMany({
+        schoolId:
+          school._id,
+      }),
+      Template.deleteMany({
+        schoolId:
+          school._id,
+        type: "CUSTOM",
+      }),
+      TemplateSettings.deleteMany({
+        schoolId:
+          school._id,
+      }),
+      deleteSchoolImages(
+        school._id
+      ),
+    ]);
+
+    await School.deleteOne({
+      _id:
+        school._id,
+    });
+
+    return ok(
+      res,
+      {
+        id:
+          String(
+            school._id
+          ),
+        name:
+          school.name,
+      },
+      "School deleted"
+    );
+  }
+);
+
 app.patch(
   "/api/admin/schools/:id/id-card-limit",
   role("ADMIN"),
@@ -766,6 +829,64 @@ app.patch(
     );
   }
 );
+
+async function ensureMarathiProfileFields(
+  schoolId
+) {
+  if (!schoolId) {
+    return;
+  }
+
+  const fields = [
+    "governmentSchemeName",
+    "projectName",
+    "anganwadiCenterNumber",
+    "villageName",
+  ];
+
+  for (const field of fields) {
+    await School.updateOne(
+      {
+        _id: schoolId,
+        [field]: {
+          $exists: false,
+        },
+      },
+      {
+        $set: {
+          [field]: "",
+        },
+      },
+      {
+        strict: false,
+      }
+    );
+  }
+}
+
+function withMarathiProfileFields(
+  school
+) {
+  if (!school) {
+    return school;
+  }
+
+  return {
+    ...school,
+    governmentSchemeName:
+      school.governmentSchemeName ??
+      "",
+    projectName:
+      school.projectName ??
+      "",
+    anganwadiCenterNumber:
+      school.anganwadiCenterNumber ??
+      "",
+    villageName:
+      school.villageName ??
+      "",
+  };
+}
 
 /* -------------------------------------------------------------------------- */
 /* School dashboard/profile                                                   */
@@ -890,6 +1011,10 @@ app.get(
   "/api/school/profile",
   role("SCHOOL"),
   async (req, res) => {
+    await ensureMarathiProfileFields(
+      req.auth.schoolId
+    );
+
     const school =
       await School.findById(
         req.auth.schoolId
@@ -905,7 +1030,9 @@ app.get(
 
     return ok(
       res,
-      school
+      withMarathiProfileFields(
+        school
+      )
     );
   }
 );
@@ -919,8 +1046,10 @@ app.put(
       "registrationNo",
       "mobile",
       "email",
-      "website",
-      "tagline",
+      "governmentSchemeName",
+      "projectName",
+      "anganwadiCenterNumber",
+      "villageName",
       "logoFileId",
       "principalName",
       "principalSignatureFileId",
@@ -934,7 +1063,7 @@ app.put(
     const updates =
       Object.fromEntries(
         Object.entries(
-          req.body
+          req.body || {}
         ).filter(
           ([key]) =>
             allowed.includes(
@@ -943,19 +1072,88 @@ app.put(
         )
       );
 
-    const school =
-      await School.findByIdAndUpdate(
-        req.auth.schoolId,
-        updates,
+    const marathiFields = [
+      "governmentSchemeName",
+      "projectName",
+      "anganwadiCenterNumber",
+      "villageName",
+    ];
+
+    // Keep the values as Unicode strings. Do not transliterate/convert them.
+    for (
+      const field
+      of marathiFields
+    ) {
+      if (
+        Object.prototype
+          .hasOwnProperty.call(
+            req.body || {},
+            field
+          )
+      ) {
+        updates[field] =
+          String(
+            req.body[field] ??
+            ""
+          ).trim();
+      }
+    }
+
+    await ensureMarathiProfileFields(
+      req.auth.schoolId
+    );
+
+    // strict:false is safe here because 'updates' is already whitelisted above.
+    // It also prevents a stale Mongoose schema process from silently dropping
+    // the newly introduced profile keys.
+    const result =
+      await School.updateOne(
         {
-          new: true,
+          _id:
+            req.auth.schoolId,
+        },
+        {
+          $set: updates,
+        },
+        {
           runValidators: true,
+          strict: false,
         }
       );
 
+    if (
+      result.matchedCount ===
+      0
+    ) {
+      return fail(
+        res,
+        "School not found",
+        404
+      );
+    }
+
+    await ensureSystemTemplates({
+      force: true,
+    });
+
+    const savedSchool =
+      await School.findById(
+        req.auth.schoolId
+      ).lean();
+
+    if (!savedSchool) {
+      return fail(
+        res,
+        "School not found",
+        404
+      );
+    }
+
     return ok(
       res,
-      school,
+      withMarathiProfileFields(
+        savedSchool
+      ),
       "Profile saved"
     );
   }
@@ -1324,6 +1522,10 @@ app.get(
   "/api/templates",
   role("SCHOOL"),
   async (req, res) => {
+    await ensureSystemTemplates({
+      force: true,
+    });
+
     const templates =
       await Template.find({
         active: true,

@@ -43,3 +43,38 @@ export async function deleteOwnedImage(fileId,schoolId,isAdmin=false){
   await bucket().delete(file._id);
   return true;
 }
+
+
+export async function deleteSchoolImages(
+  schoolId
+) {
+  const files =
+    await mongoose.connection.db
+      .collection(
+        "schoolImages.files"
+      )
+      .find({
+        "metadata.schoolId":
+          String(
+            schoolId
+          ),
+      })
+      .project({
+        _id: 1,
+      })
+      .toArray();
+
+  const gridBucket =
+    bucket();
+
+  for (
+    const file
+    of files
+  ) {
+    await gridBucket.delete(
+      file._id
+    );
+  }
+
+  return files.length;
+}

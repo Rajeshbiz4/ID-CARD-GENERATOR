@@ -9,7 +9,8 @@ dotenv.config();
 await connectDatabase();
 
 const adminEmail = process.env.ADMIN_EMAIL || "admin@idcard.local";
-const adminPassword = process.env.ADMIN_PASSWORD || "Atharva@25";
+const adminPassword =
+  "Admin@123";
 const passwordHash = await bcrypt.hash(adminPassword, 12);
 
 const admin = await User.findOneAndUpdate(

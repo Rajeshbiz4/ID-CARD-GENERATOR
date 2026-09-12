@@ -52,6 +52,22 @@ function getValue(
       school?.schoolCode ||
       "",
 
+    governmentSchemeName:
+      school?.governmentSchemeName ||
+      "",
+
+    projectName:
+      school?.projectName ||
+      "",
+
+    anganwadiCenterNumber:
+      school?.anganwadiCenterNumber ||
+      "",
+
+    villageName:
+      school?.villageName ||
+      "",
+
     principalName:
       school?.principalName ||
       "",
@@ -106,7 +122,29 @@ function getValue(
     return "";
   }
 
-  return `${element.prefix || ""}${value}`;
+  const rawValue =
+    String(value).trim();
+
+  const prefix =
+    String(
+      element.prefix || ""
+    );
+
+  const trimmedPrefix =
+    prefix.trim();
+
+  // Avoid duplicate labels if the saved profile value already contains
+  // the same prefix.
+  if (
+    trimmedPrefix &&
+    rawValue.startsWith(
+      trimmedPrefix
+    )
+  ) {
+    return rawValue;
+  }
+
+  return `${prefix}${rawValue}`;
 }
 
 function Decoration({

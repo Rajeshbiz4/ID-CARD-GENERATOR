@@ -121,15 +121,44 @@ export default function ProfilePage({
         const response =
           await api.put(
             "/school/profile",
-            form
+            {
+              ...form,
+              governmentSchemeName:
+                form.governmentSchemeName ||
+                "",
+              projectName:
+                form.projectName ||
+                "",
+              anganwadiCenterNumber:
+                form.anganwadiCenterNumber ||
+                "",
+              villageName:
+                form.villageName ||
+                "",
+            }
           );
 
-        setForm(
-          response.data.data
-        );
+        const data =
+          response.data.data || {};
+
+        setForm({
+          ...data,
+          governmentSchemeName:
+            data.governmentSchemeName ||
+            "",
+          projectName:
+            data.projectName ||
+            "",
+          anganwadiCenterNumber:
+            data.anganwadiCenterNumber ||
+            "",
+          villageName:
+            data.villageName ||
+            "",
+        });
 
         setMessage(
-          "School profile saved."
+          "School profile saved. Template 101 Marathi information is updated."
         );
       } catch (e) {
         setError(
@@ -145,9 +174,24 @@ export default function ProfilePage({
       8,
     ],
     [
-      "tagline",
-      "Tagline",
-      4,
+      "governmentSchemeName",
+      "Government scheme / शासकीय योजनेचे नाव",
+      12,
+    ],
+    [
+      "projectName",
+      "Project / प्रकल्प",
+      6,
+    ],
+    [
+      "anganwadiCenterNumber",
+      "Anganwadi centre no. / अंगणवाडी केंद्र क्रमांक",
+      6,
+    ],
+    [
+      "villageName",
+      "Village / गाव",
+      12,
     ],
     [
       "registrationNo",
@@ -172,11 +216,6 @@ export default function ProfilePage({
     [
       "email",
       "Email",
-      6,
-    ],
-    [
-      "website",
-      "Website",
       6,
     ],
     [
@@ -401,7 +440,7 @@ export default function ProfilePage({
                   mt: 1,
                 }}
               >
-                Signature is automatically cropped to remove empty/white space, enlarged, and normalized to fit the ID-card signature area.
+                Signature is automatically normalized to fit the signature area without overlapping other fields.
               </Typography>
             </CardContent>
           </Card>
@@ -432,7 +471,10 @@ export default function ProfilePage({
                     >
                       {[
                         "name",
-                        "tagline",
+                        "governmentSchemeName",
+                        "projectName",
+                        "anganwadiCenterNumber",
+                        "villageName",
                         "principalName",
                         "address",
                         "city",

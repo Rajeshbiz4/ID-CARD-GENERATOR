@@ -63,6 +63,29 @@ const schoolSchema = new Schema(
     pinCode: String,
     website: String,
     tagline: String,
+
+    // Marathi profile data used by Template 101.
+    governmentSchemeName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    projectName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    anganwadiCenterNumber: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    villageName: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+
     logoFileId: {
       type: Schema.Types.ObjectId,
       default: null,
@@ -230,6 +253,10 @@ const elementSchema = new Schema(
         "schoolName",
         "schoolTagline",
         "schoolRegistrationNo",
+        "governmentSchemeName",
+        "projectName",
+        "anganwadiCenterNumber",
+        "villageName",
         "principalName",
         "studentPhoto",
         "studentName",

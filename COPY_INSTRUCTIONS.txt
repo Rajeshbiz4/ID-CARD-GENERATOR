@@ -1,75 +1,40 @@
-ID CARD GENERATOR v2.5 - QUOTA + ADMIN PASSWORD
-CHANGED FILES ONLY
+TEMPLATE 101 - ANGANWADI LINE DUPLICATION FIX
 
-Replace the files in this ZIP over your latest project.
+Replace only:
 
-ID CARD LIMIT
--------------
-- Every NEW school gets:
-    Total limit = 20
-    Used = 0
-    Remaining = 20
+frontend/src/TemplateRenderer.jsx
 
-- Existing schools that do not have quota fields are initialized automatically
-  with limit 20 and used 0.
+PROBLEM
+-------
+If School Profile already stores:
 
-ADMIN -> SCHOOLS
-----------------
-The list now shows:
-- ID Limit
-- Used
-- Remaining
+अंगणवाडी केंद्र क्रमांक ८४
 
-Use the edit icon in the Actions column to update the TOTAL limit.
+Template 101 was adding the prefix again.
 
-Example:
-  Current total limit: 20
-  Used: 12
-  Set new total limit: 100
-  Remaining: 88
+FIX
+---
+Now both cases render exactly as:
 
-The total limit cannot be set below the already-used count.
+अंगणवाडी केंद्र क्रमांक ८४
 
-SCHOOL DASHBOARD
-----------------
-A new "ID Card Balance" card shows the remaining credits.
+Case 1:
+Stored value = ८४
 
-GENERATE / DOWNLOAD
--------------------
-- Live preview = 0 credits.
-- Download PNG = 1 credit.
-- Download PDF = 1 credit.
-- Quota is consumed on the BACKEND before the browser starts the download.
-- If balance is 0, the download buttons are disabled.
-- Backend also rejects requests when the balance is exhausted.
-- MongoDB uses an atomic conditional update to protect the final credits from
-  concurrent download requests.
+Case 2:
+Stored value = अंगणवाडी केंद्र क्रमांक ८४
 
-ADMIN PASSWORD
---------------
-New admin seeds use ADMIN_PASSWORD when provided; otherwise the requested
-fallback password is used.
+The same duplicate-prefix protection also applies to:
 
-For an EXISTING admin account run once:
+प्रकल्प कोरेगाव -2
 
-  cd backend
-  npm run reset-admin-password
+No database update is needed.
+No template layout or other functionality is changed.
 
-RUN AFTER REPLACING
--------------------
-Backend:
-  cd backend
-  npm install
-  npm run reset-admin-password
-  npm run dev
+After replacing:
 
-Frontend:
-  cd frontend
-  npm run dev
+cd frontend
+npm run dev
 
 Then:
-  Ctrl + Shift + R
-
-No existing student CRUD, school profile, template, Marathi typing, image/GridFS,
-custom-template, authentication, PDF/PNG rendering, loader or routing
-functionality is removed.
+Ctrl + Shift + R

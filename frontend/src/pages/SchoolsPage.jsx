@@ -3,7 +3,12 @@ import {
   Alert, Box, Button, Chip, Dialog, DialogActions, DialogContent, DialogTitle,
   Grid, IconButton, Stack, TextField, Tooltip, Typography,
 } from "@mui/material";
-import { AddRounded, EditRounded, PowerSettingsNewRounded } from "@mui/icons-material";
+import {
+  AddRounded,
+  DeleteRounded,
+  EditRounded,
+  PowerSettingsNewRounded,
+} from "@mui/icons-material";
 import { DataGrid } from "@mui/x-data-grid";
 import Layout from "../Layout";
 import { PageHeader } from "../ui";
@@ -37,6 +42,26 @@ export default function SchoolsPage({ user, onLogout }) {
   const [limitSchool, setLimitSchool] = useState(null);
   const [limitValue, setLimitValue] = useState(DEFAULT_ID_CARD_LIMIT);
   const [limitError, setLimitError] = useState("");
+
+  const [
+    deleteOpen,
+    setDeleteOpen,
+  ] = useState(false);
+
+  const [
+    deleteSchool,
+    setDeleteSchool,
+  ] = useState(null);
+
+  const [
+    deleteBusy,
+    setDeleteBusy,
+  ] = useState(false);
+
+  const [
+    deleteError,
+    setDeleteError,
+  ] = useState("");
 
   const load = () =>
     api.get("/admin/schools")
@@ -102,6 +127,42 @@ export default function SchoolsPage({ user, onLogout }) {
     }
   };
 
+  const askDelete =
+    (row) => {
+      setDeleteSchool(
+        row
+      );
+      setDeleteError("");
+      setDeleteOpen(true);
+    };
+
+  const confirmDelete =
+    async () => {
+      if (!deleteSchool) {
+        return;
+      }
+
+      setDeleteBusy(true);
+      setDeleteError("");
+
+      try {
+        await api.delete(
+          `/admin/schools/${deleteSchool._id}`
+        );
+
+        setDeleteOpen(false);
+        setDeleteSchool(null);
+
+        await load();
+      } catch (e) {
+        setDeleteError(
+          errorMessage(e)
+        );
+      } finally {
+        setDeleteBusy(false);
+      }
+    };
+
   const columns = [
     { field: "schoolCode", headerName: "School Code", width: 130 },
     { field: "name", headerName: "School Name", minWidth: 210, flex: 1 },
@@ -136,7 +197,7 @@ export default function SchoolsPage({ user, onLogout }) {
       ),
     },
     {
-      field: "actions", headerName: "Actions", width: 115, sortable: false, filterable: false,
+      field: "actions", headerName: "Actions", width: 155, sortable: false, filterable: false,
       renderCell: ({ row }) => (
         <Stack direction="row" spacing={0.25}>
           <Tooltip title="Update ID card limit">
@@ -144,6 +205,17 @@ export default function SchoolsPage({ user, onLogout }) {
           </Tooltip>
           <Tooltip title={row.status === "ACTIVE" ? "Deactivate school" : "Activate school"}>
             <IconButton onClick={() => toggle(row)}><PowerSettingsNewRounded /></IconButton>
+          </Tooltip>
+
+          <Tooltip title="Delete school">
+            <IconButton
+              color="error"
+              onClick={() =>
+                askDelete(row)
+              }
+            >
+              <DeleteRounded />
+            </IconButton>
           </Tooltip>
         </Stack>
       ),
@@ -230,6 +302,80 @@ export default function SchoolsPage({ user, onLogout }) {
         <DialogActions>
           <Button onClick={() => setLimitOpen(false)}>Cancel</Button>
           <Button variant="contained" onClick={updateLimit}>Update limit</Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={deleteOpen}
+        onClose={() => {
+          if (
+            !deleteBusy
+          ) {
+            setDeleteOpen(
+              false
+            );
+          }
+        }}
+        maxWidth="xs"
+        fullWidth
+      >
+        <DialogTitle>
+          Delete school?
+        </DialogTitle>
+
+        <DialogContent dividers>
+          {deleteError && (
+            <Alert
+              severity="error"
+              sx={{ mb: 2 }}
+            >
+              {deleteError}
+            </Alert>
+          )}
+
+          <Typography>
+            Are you sure you want to permanently delete
+            {" "}
+            <strong>
+              {deleteSchool?.name}
+            </strong>
+            ?
+          </Typography>
+
+          <Alert
+            severity="warning"
+            sx={{ mt: 2 }}
+          >
+            This will delete the school login, students, custom templates,
+            template settings and school-uploaded images. This action cannot
+            be undone.
+          </Alert>
+        </DialogContent>
+
+        <DialogActions>
+          <Button
+            disabled={deleteBusy}
+            onClick={() =>
+              setDeleteOpen(
+                false
+              )
+            }
+          >
+            Cancel
+          </Button>
+
+          <Button
+            color="error"
+            variant="contained"
+            disabled={deleteBusy}
+            onClick={
+              confirmDelete
+            }
+          >
+            {deleteBusy
+              ? "Deleting..."
+              : "Delete school"}
+          </Button>
         </DialogActions>
       </Dialog>
     </Layout>

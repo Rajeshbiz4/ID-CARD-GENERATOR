@@ -13,7 +13,7 @@ await ensureSystemTemplates();
 await ensureStudentIndexes();
 
 const adminEmail = "admin@idcard.local";
-const adminPassword = process.env.ADMIN_PASSWORD || "Atharva@25";
+const adminPassword = process.env.ADMIN_PASSWORD || "Admin@123";
 
 if (!(await User.exists({ email: adminEmail }))) {
   await User.create({
