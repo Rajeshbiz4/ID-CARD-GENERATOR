@@ -19,6 +19,7 @@ import {
   BadgeRounded,
   DashboardRounded,
   DomainRounded,
+  GroupsRounded,
   LogoutRounded,
   MenuRounded,
   PaletteRounded,
@@ -97,6 +98,21 @@ export default function Layout({
       "Add Student",
       "/school/students/new",
       <PersonAddAlt1Rounded />,
+    ],
+    [
+      "Faculty & Staff",
+      "/school/faculty",
+      <GroupsRounded />,
+    ],
+    [
+      "Add Faculty",
+      "/school/faculty/new",
+      <PersonAddAlt1Rounded />,
+    ],
+    [
+      "Faculty ID Cards",
+      "/school/faculty-id-cards",
+      <BadgeRounded />,
     ],
     [
       "ID Cards",

@@ -1,40 +1,182 @@
-TEMPLATE 101 - ANGANWADI LINE DUPLICATION FIX
+ID CARD GENERATOR v2.8 - FACULTY / SCHOOL STAFF MODULE
+CHANGED FILES ONLY
 
-Replace only:
+Replace all files in this ZIP over the latest project.
 
-frontend/src/TemplateRenderer.jsx
+NEW MODULE
+----------
+Sidebar:
+- Faculty & Staff
+- Add Faculty
+- Faculty ID Cards
 
-PROBLEM
+FACULTY CRUD
+------------
+Backend APIs:
+GET    /api/faculty
+POST   /api/faculty
+GET    /api/faculty/:id
+PUT    /api/faculty/:id
+DELETE /api/faculty/:id
+
+Only these are mandatory:
+- Name
+- Faculty / Staff Type
+
+Other fields are optional:
+- Employee ID
+- Designation
+- Department
+- Mobile
+- Emergency Contact
+- Blood Group
+- DOB
+- Joining Date
+- Qualification
+- Address
+- Photo
+- Status
+
+Staff Types:
+- Teacher
+- Principal
+- Head Master
+- Office Staff
+- Clerk
+- Support Staff
+- Driver
+- Librarian
+- Accountant
+- Other
+
+MARATHI
 -------
-If School Profile already stores:
+Existing English / मराठी Phonetic typing is available for:
+- Name
+- Designation
+- Department
+- Qualification
+- Address
 
-अंगणवाडी केंद्र क्रमांक ८४
+The Marathi text is stored exactly as entered.
 
-Template 101 was adding the prefix again.
+PHOTO
+-----
+Faculty photo uses the existing GridFS image upload and the existing
+student-photo normalization pipeline. No new image storage service is added.
 
-FIX
+FACULTY ID CARDS
+----------------
+20 dedicated SYSTEM templates:
+- 10 English
+- 10 Marathi
+- 10 Portrait
+- 10 Landscape
+
+Every Faculty template has:
+- School logo
+- School name
+- Faculty photo
+- Faculty name
+- Employee ID
+- Faculty / Staff type
+- Designation / Department where applicable
+- Mobile / Blood Group where applicable
+- QR code
+- Principal signature
+- Academic year
+
+Template geometry validation:
+- 20/20 required elements present
+- card bounds: PASS
+- element overlap audit: PASS
+
+Faculty templates are separated using:
+cardFor: "FACULTY"
+
+Existing student/custom templates remain:
+cardFor: "STUDENT"
+
+FACULTY TEMPLATE SETTINGS
+-------------------------
+APIs:
+GET /api/faculty-templates
+GET /api/school/faculty-template-settings
+PUT /api/school/faculty-template-settings
+
+The selected Faculty template is stored separately from the selected Student
+template, so changing a Faculty template does not change the Student template.
+
+FACULTY ID DOWNLOAD
+-------------------
+New page:
+Faculty ID Cards
+
+Supports:
+- Faculty selection
+- Faculty-template selection
+- Live preview
+- PNG download
+- PDF download
+
+Quota:
+- Preview = 0 credit
+- Faculty PNG = 1 credit
+- Faculty PDF = 1 credit
+- Uses the SAME existing school ID-card balance
+- Download buttons disable when remaining balance reaches 0
+
+After a successful download the Faculty card status changes to GENERATED.
+
+DASHBOARD
+---------
+School dashboard adds:
+- Faculty / Staff
+- Faculty IDs Generated
+- Faculty IDs Pending
+
+Admin dashboard adds:
+- Faculty / Staff total
+
+DELETE SCHOOL
+-------------
+Existing Admin Delete School cleanup now also deletes that school's Faculty
+records.
+
+UNCHANGED
+---------
+- Student CRUD
+- Student ID Cards
+- Template 101 Marathi data
+- Admin password/reset flow
+- School profile
+- ID-card quota logic
+- GridFS
+- School logo/signature
+- Marathi phonetic typing
+- Existing student/custom templates
+- PNG/PDF functionality
+- Authentication
+- Loaders
+- Vercel structure
+
+RUN
 ---
-Now both cases render exactly as:
+Backend:
+  cd backend
+  npm install
+  npm run dev
 
-अंगणवाडी केंद्र क्रमांक ८४
+Expected system template total will now include the existing Student templates
+plus 20 Faculty templates.
 
-Case 1:
-Stored value = ८४
+Frontend:
+  cd frontend
+  npm install
+  npm run dev
 
-Case 2:
-Stored value = अंगणवाडी केंद्र क्रमांक ८४
+Then hard refresh:
+  Ctrl + Shift + R
 
-The same duplicate-prefix protection also applies to:
-
-प्रकल्प कोरेगाव -2
-
-No database update is needed.
-No template layout or other functionality is changed.
-
-After replacing:
-
-cd frontend
-npm run dev
-
-Then:
-Ctrl + Shift + R
+Backend API version:
+2.8.0

@@ -23,6 +23,9 @@ import ProfilePage from "./pages/ProfilePage";
 import TemplatesPage from "./pages/TemplatesPage";
 import CustomTemplatePage from "./pages/CustomTemplatePage";
 import IdCardsPage from "./pages/IdCardsPage";
+import FacultyPage from "./pages/FacultyPage";
+import FacultyFormPage from "./pages/FacultyFormPage";
+import FacultyIdCardsPage from "./pages/FacultyIdCardsPage";
 
 import {
   beginLoading,
@@ -161,6 +164,38 @@ export default function App() {
         element={protect(
           "SCHOOL",
           StudentFormPage
+        )}
+      />
+
+      <Route
+        path="/school/faculty"
+        element={protect(
+          "SCHOOL",
+          FacultyPage
+        )}
+      />
+
+      <Route
+        path="/school/faculty/new"
+        element={protect(
+          "SCHOOL",
+          FacultyFormPage
+        )}
+      />
+
+      <Route
+        path="/school/faculty/:id/edit"
+        element={protect(
+          "SCHOOL",
+          FacultyFormPage
+        )}
+      />
+
+      <Route
+        path="/school/faculty-id-cards"
+        element={protect(
+          "SCHOOL",
+          FacultyIdCardsPage
         )}
       />
 

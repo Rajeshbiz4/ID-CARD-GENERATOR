@@ -31,6 +31,7 @@ const DEVANAGARI_FONT =
 function getValue(
   element,
   student,
+  faculty,
   school
 ) {
   const classDivision = [
@@ -110,6 +111,39 @@ function getValue(
       student?.parentMobile ||
       "",
 
+    facultyName:
+      faculty?.name || "",
+
+    employeeCode:
+      faculty?.employeeCode || "",
+
+    facultyType:
+      faculty?.staffType || "",
+
+    designation:
+      faculty?.designation || "",
+
+    department:
+      faculty?.department || "",
+
+    facultyMobile:
+      faculty?.mobile || "",
+
+    facultyBloodGroup:
+      faculty?.bloodGroup || "",
+
+    facultyDob:
+      faculty?.dob
+        ? new Date(
+            faculty.dob
+          ).toLocaleDateString(
+            "en-IN"
+          )
+        : "",
+
+    qualification:
+      faculty?.qualification || "",
+
     customText:
       element.customText ||
       "",
@@ -186,7 +220,8 @@ function elementStyle(
   const multiline =
     element.multiline === true ||
     element.type === "schoolName" ||
-    element.type === "studentName";
+    element.type === "studentName" ||
+    element.type === "facultyName";
 
   return {
     position: "absolute",
@@ -321,6 +356,7 @@ function AutoFitText({
 function Element({
   element,
   student,
+  faculty,
   school,
   scale,
   previewMode,
@@ -361,6 +397,50 @@ function Element({
           student?.photoFileId
         }
         alt="Student"
+        sx={{
+          ...style,
+          objectFit:
+            element.objectFit ||
+            "cover",
+          objectPosition:
+            "center top",
+        }}
+        fallback={fallback}
+      />
+    );
+  }
+
+
+  if (
+    element.type ===
+    "facultyPhoto"
+  ) {
+    const fallback = (
+      <Box
+        component="img"
+        src={
+          previewMode
+            ? SAMPLE_STUDENT
+            : EMPTY_STUDENT
+        }
+        alt=""
+        sx={{
+          ...style,
+          objectFit:
+            element.objectFit ||
+            "cover",
+          objectPosition:
+            "center top",
+        }}
+      />
+    );
+
+    return (
+      <StoredImage
+        fileId={
+          faculty?.photoFileId
+        }
+        alt="Faculty"
         sx={{
           ...style,
           objectFit:
@@ -465,22 +545,43 @@ function Element({
     "qrCode"
   ) {
     const qrValue =
-      JSON.stringify({
-        schoolCode:
-          school?.schoolCode ||
-          "",
-        admissionNo:
-          student?.admissionNo ||
-          "",
-        name:
-          student?.name || "",
-        class:
-          student?.className ||
-          "",
-        division:
-          student?.division ||
-          "",
-      });
+      JSON.stringify(
+        faculty
+          ? {
+              type: "FACULTY",
+              schoolCode:
+                school?.schoolCode ||
+                "",
+              employeeCode:
+                faculty?.employeeCode ||
+                "",
+              name:
+                faculty?.name || "",
+              staffType:
+                faculty?.staffType ||
+                "",
+              designation:
+                faculty?.designation ||
+                "",
+            }
+          : {
+              type: "STUDENT",
+              schoolCode:
+                school?.schoolCode ||
+                "",
+              admissionNo:
+                student?.admissionNo ||
+                "",
+              name:
+                student?.name || "",
+              class:
+                student?.className ||
+                "",
+              division:
+                student?.division ||
+                "",
+            }
+      );
 
     const size =
       Math.min(
@@ -517,6 +618,7 @@ function Element({
       {getValue(
         element,
         student,
+        faculty,
         school
       )}
     </AutoFitText>
@@ -627,6 +729,7 @@ function renderElementsForTemplate(template) {
 export default function TemplateRenderer({
   template,
   student,
+  faculty,
   school,
   targetWidth,
   interactive = false,
@@ -759,6 +862,7 @@ export default function TemplateRenderer({
               <Element
                 element={element}
                 student={student}
+                faculty={faculty}
                 school={school}
                 scale={scale}
                 previewMode={

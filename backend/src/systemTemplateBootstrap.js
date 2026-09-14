@@ -1,5 +1,16 @@
 import { Template } from "./models.js";
 import { SYSTEM_TEMPLATES } from "./systemTemplates.js";
+import { FACULTY_SYSTEM_TEMPLATES } from "./facultyTemplates.js";
+
+const ALL_SYSTEM_TEMPLATES = [
+  ...SYSTEM_TEMPLATES.map(
+    (template) => ({
+      ...template,
+      cardFor: "STUDENT",
+    })
+  ),
+  ...FACULTY_SYSTEM_TEMPLATES,
+];
 
 let bootstrapPromise = null;
 
@@ -24,7 +35,7 @@ export async function ensureSystemTemplates(
   }
 
   const currentPromise = (async () => {
-    const validSlugs = SYSTEM_TEMPLATES.map((template) => template.slug);
+    const validSlugs = ALL_SYSTEM_TEMPLATES.map((template) => template.slug);
 
     // Deactivate old predefined templates not in the current system-template library
     // without touching any school-created CUSTOM template.
@@ -41,9 +52,9 @@ export async function ensureSystemTemplates(
       }
     );
 
-    if (SYSTEM_TEMPLATES.length > 0) {
+    if (ALL_SYSTEM_TEMPLATES.length > 0) {
       await Template.bulkWrite(
-        SYSTEM_TEMPLATES.map((template) => ({
+        ALL_SYSTEM_TEMPLATES.map((template) => ({
           updateOne: {
             filter: {
               slug: template.slug,
@@ -67,7 +78,7 @@ export async function ensureSystemTemplates(
     });
 
     console.log(
-      `System templates ready: ${activeSystemCount}/${SYSTEM_TEMPLATES.length}`
+      `System templates ready: ${activeSystemCount}/${ALL_SYSTEM_TEMPLATES.length}`
     );
 
     return activeSystemCount;

@@ -1,11 +1,11 @@
 {
   "name": "school-id-card-generator-api",
-  "version": "2.6.0",
+  "version": "2.8.0",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node --watch src/server.js",
-    "start": "node src/server.js",
+    "dev": "node init && node --watch src/server.js",
+    "start": "node init && node src/server.js",
     "seed": "node src/seed.js",
     "reset-admin-password": "node src/resetAdminPassword.js"
   },

@@ -20,6 +20,7 @@ import {
 import {
   School,
   Student,
+  Faculty,
   Template,
   TemplateSettings,
   User,
@@ -261,7 +262,7 @@ app.get("/", (req, res) => {
   return ok(res, {
     application:
       "School ID Card Generator",
-    version: "2.5.0",
+    version: "2.8.0",
   });
 });
 
@@ -272,6 +273,14 @@ app.get(
       res,
       {
         status: "ok",
+        version: "2.8.0",
+        features: {
+          deleteSchool: true,
+          schoolProfileUpdate: true,
+          facultyCrud: true,
+          facultyIdCards: true,
+          facultyTemplates: 20,
+        },
       },
       "API healthy"
     );
@@ -511,12 +520,16 @@ app.get(
       totalSchools,
       activeSchools,
       totalStudents,
+      totalFaculty,
     ] = await Promise.all([
       School.countDocuments(),
       School.countDocuments({
         status: "ACTIVE",
       }),
       Student.countDocuments({
+        isDeleted: false,
+      }),
+      Faculty.countDocuments({
         isDeleted: false,
       }),
     ]);
@@ -528,6 +541,7 @@ app.get(
         totalSchools -
         activeSchools,
       totalStudents,
+      totalFaculty,
     });
   }
 );
@@ -729,66 +743,83 @@ app.patch(
   }
 );
 
+async function deleteSchoolHandler(
+  req,
+  res
+) {
+  const school =
+    await School.findById(
+      req.params.id
+    ).lean();
+
+  if (!school) {
+    return fail(
+      res,
+      "School not found",
+      404
+    );
+  }
+
+  // Delete school-owned data only. SYSTEM templates are shared and stay intact.
+  await Promise.all([
+    User.deleteMany({
+      schoolId:
+        school._id,
+      role: "SCHOOL",
+    }),
+    Student.deleteMany({
+      schoolId:
+        school._id,
+    }),
+    Faculty.deleteMany({
+      schoolId:
+        school._id,
+    }),
+    Template.deleteMany({
+      schoolId:
+        school._id,
+      type: "CUSTOM",
+    }),
+    TemplateSettings.deleteMany({
+      schoolId:
+        school._id,
+    }),
+    deleteSchoolImages(
+      school._id
+    ),
+  ]);
+
+  await School.deleteOne({
+    _id:
+      school._id,
+  });
+
+  return ok(
+    res,
+    {
+      id:
+        String(
+          school._id
+        ),
+      name:
+        school.name,
+    },
+    "School deleted successfully"
+  );
+}
+
 app.delete(
   "/api/admin/schools/:id",
   role("ADMIN"),
-  async (req, res) => {
-    const school =
-      await School.findById(
-        req.params.id
-      ).lean();
+  deleteSchoolHandler
+);
 
-    if (!school) {
-      return fail(
-        res,
-        "School not found",
-        404
-      );
-    }
-
-    // Remove school-owned records. SYSTEM templates are not touched.
-    await Promise.all([
-      User.deleteMany({
-        schoolId:
-          school._id,
-        role: "SCHOOL",
-      }),
-      Student.deleteMany({
-        schoolId:
-          school._id,
-      }),
-      Template.deleteMany({
-        schoolId:
-          school._id,
-        type: "CUSTOM",
-      }),
-      TemplateSettings.deleteMany({
-        schoolId:
-          school._id,
-      }),
-      deleteSchoolImages(
-        school._id
-      ),
-    ]);
-
-    await School.deleteOne({
-      _id:
-        school._id,
-    });
-
-    return ok(
-      res,
-      {
-        id:
-          String(
-            school._id
-          ),
-        name:
-          school.name,
-      },
-      "School deleted"
-    );
-  }
+// Compatibility endpoint for hosts/proxies where DELETE routes were deployed
+// incorrectly or an older frontend/backend route contract was cached.
+app.post(
+  "/api/admin/schools/:id/delete",
+  role("ADMIN"),
+  deleteSchoolHandler
 );
 
 app.patch(
@@ -905,6 +936,9 @@ app.get(
       totalStudents,
       generatedCards,
       pendingCards,
+      totalFaculty,
+      facultyGeneratedCards,
+      facultyPendingCards,
       customTemplates,
     ] = await Promise.all([
       School.findById(schoolId).lean(),
@@ -915,6 +949,20 @@ app.get(
         cardStatus: "GENERATED",
       }),
       Student.countDocuments({
+        schoolId,
+        isDeleted: false,
+        cardStatus: "PENDING",
+      }),
+      Faculty.countDocuments({
+        schoolId,
+        isDeleted: false,
+      }),
+      Faculty.countDocuments({
+        schoolId,
+        isDeleted: false,
+        cardStatus: "GENERATED",
+      }),
+      Faculty.countDocuments({
         schoolId,
         isDeleted: false,
         cardStatus: "PENDING",
@@ -936,6 +984,9 @@ app.get(
       activeStudents: totalStudents,
       generatedCards,
       pendingCards,
+      totalFaculty,
+      facultyGeneratedCards,
+      facultyPendingCards,
       customTemplates,
       idCardLimit: quota.limit,
       idCardsUsed: quota.used,
@@ -1037,126 +1088,125 @@ app.get(
   }
 );
 
+const SCHOOL_PROFILE_UPDATE_FIELDS = [
+  "name",
+  "registrationNo",
+  "mobile",
+  "email",
+  "governmentSchemeName",
+  "projectName",
+  "anganwadiCenterNumber",
+  "villageName",
+  "logoFileId",
+  "principalName",
+  "principalSignatureFileId",
+  "academicYear",
+  "address",
+  "city",
+  "state",
+  "pinCode",
+];
+
+async function updateSchoolProfileHandler(
+  req,
+  res
+) {
+  const updates =
+    Object.fromEntries(
+      Object.entries(
+        req.body || {}
+      ).filter(
+        ([key]) =>
+          SCHOOL_PROFILE_UPDATE_FIELDS.includes(
+            key
+          )
+      )
+    );
+
+  const textFields = [
+    "name",
+    "registrationNo",
+    "mobile",
+    "email",
+    "governmentSchemeName",
+    "projectName",
+    "anganwadiCenterNumber",
+    "villageName",
+    "principalName",
+    "academicYear",
+    "address",
+    "city",
+    "state",
+    "pinCode",
+  ];
+
+  for (
+    const field
+    of textFields
+  ) {
+    if (
+      Object.prototype
+        .hasOwnProperty.call(
+          updates,
+          field
+        )
+    ) {
+      updates[field] =
+        String(
+          updates[field] ??
+          ""
+        ).trim();
+    }
+  }
+
+  const school =
+    await School.findByIdAndUpdate(
+      req.auth.schoolId,
+      {
+        $set: updates,
+      },
+      {
+        new: true,
+        runValidators: true,
+        strict: false,
+      }
+    ).lean();
+
+  if (!school) {
+    return fail(
+      res,
+      "School not found",
+      404
+    );
+  }
+
+  return ok(
+    res,
+    withMarathiProfileFields(
+      school
+    ),
+    "Profile saved"
+  );
+}
+
 app.put(
   "/api/school/profile",
   role("SCHOOL"),
-  async (req, res) => {
-    const allowed = [
-      "name",
-      "registrationNo",
-      "mobile",
-      "email",
-      "governmentSchemeName",
-      "projectName",
-      "anganwadiCenterNumber",
-      "villageName",
-      "logoFileId",
-      "principalName",
-      "principalSignatureFileId",
-      "academicYear",
-      "address",
-      "city",
-      "state",
-      "pinCode",
-    ];
+  updateSchoolProfileHandler
+);
 
-    const updates =
-      Object.fromEntries(
-        Object.entries(
-          req.body || {}
-        ).filter(
-          ([key]) =>
-            allowed.includes(
-              key
-            )
-        )
-      );
+app.patch(
+  "/api/school/profile",
+  role("SCHOOL"),
+  updateSchoolProfileHandler
+);
 
-    const marathiFields = [
-      "governmentSchemeName",
-      "projectName",
-      "anganwadiCenterNumber",
-      "villageName",
-    ];
-
-    // Keep the values as Unicode strings. Do not transliterate/convert them.
-    for (
-      const field
-      of marathiFields
-    ) {
-      if (
-        Object.prototype
-          .hasOwnProperty.call(
-            req.body || {},
-            field
-          )
-      ) {
-        updates[field] =
-          String(
-            req.body[field] ??
-            ""
-          ).trim();
-      }
-    }
-
-    await ensureMarathiProfileFields(
-      req.auth.schoolId
-    );
-
-    // strict:false is safe here because 'updates' is already whitelisted above.
-    // It also prevents a stale Mongoose schema process from silently dropping
-    // the newly introduced profile keys.
-    const result =
-      await School.updateOne(
-        {
-          _id:
-            req.auth.schoolId,
-        },
-        {
-          $set: updates,
-        },
-        {
-          runValidators: true,
-          strict: false,
-        }
-      );
-
-    if (
-      result.matchedCount ===
-      0
-    ) {
-      return fail(
-        res,
-        "School not found",
-        404
-      );
-    }
-
-    await ensureSystemTemplates({
-      force: true,
-    });
-
-    const savedSchool =
-      await School.findById(
-        req.auth.schoolId
-      ).lean();
-
-    if (!savedSchool) {
-      return fail(
-        res,
-        "School not found",
-        404
-      );
-    }
-
-    return ok(
-      res,
-      withMarathiProfileFields(
-        savedSchool
-      ),
-      "Profile saved"
-    );
-  }
+// Compatibility route for deployments/proxies that do not expose PUT/PATCH
+// correctly. Existing clients can continue using PUT.
+app.post(
+  "/api/school/profile/update",
+  role("SCHOOL"),
+  updateSchoolProfileHandler
 );
 
 function normalizeOptionalString(
@@ -1514,6 +1564,364 @@ app.patch(
   }
 );
 
+
+function normalizeFacultyPayload(
+  payload = {}
+) {
+  const data = {
+    ...payload,
+  };
+
+  [
+    "employeeCode",
+    "designation",
+    "department",
+    "mobile",
+    "emergencyContact",
+    "bloodGroup",
+    "qualification",
+    "address",
+  ].forEach((field) => {
+    data[field] =
+      normalizeOptionalString(
+        data[field]
+      );
+  });
+
+  data.name =
+    String(
+      data.name || ""
+    ).trim();
+
+  data.staffType =
+    String(
+      data.staffType || ""
+    ).trim();
+
+  data.status =
+    data.status === "INACTIVE"
+      ? "INACTIVE"
+      : "ACTIVE";
+
+  if (!data.dob) {
+    data.dob = null;
+  }
+
+  if (!data.joiningDate) {
+    data.joiningDate = null;
+  }
+
+  return data;
+}
+
+/* -------------------------------------------------------------------------- */
+/* Faculty / School staff                                                     */
+/* -------------------------------------------------------------------------- */
+
+app.get(
+  "/api/faculty",
+  role("SCHOOL"),
+  async (req, res) => {
+    const query = {
+      schoolId:
+        req.auth.schoolId,
+      isDeleted: false,
+    };
+
+    const search =
+      String(
+        req.query.search || ""
+      ).trim();
+
+    if (search) {
+      query.$or = [
+        {
+          name: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          employeeCode: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          designation: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          department: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          mobile: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    const faculty =
+      await Faculty.find(query)
+        .sort({
+          name: 1,
+        })
+        .lean();
+
+    return ok(
+      res,
+      faculty
+    );
+  }
+);
+
+app.post(
+  "/api/faculty",
+  role("SCHOOL"),
+  async (req, res) => {
+    const data = {
+      ...normalizeFacultyPayload(
+        req.body
+      ),
+      schoolId:
+        req.auth.schoolId,
+    };
+
+    if (!data.name) {
+      return fail(
+        res,
+        "Faculty name is required"
+      );
+    }
+
+    if (!data.staffType) {
+      return fail(
+        res,
+        "Faculty type is required"
+      );
+    }
+
+    if (
+      data.employeeCode &&
+      await Faculty.exists({
+        schoolId:
+          req.auth.schoolId,
+        employeeCode:
+          data.employeeCode,
+        isDeleted: false,
+      })
+    ) {
+      return fail(
+        res,
+        "Employee code already exists",
+        409
+      );
+    }
+
+    const faculty =
+      await Faculty.create(
+        data
+      );
+
+    return ok(
+      res,
+      faculty,
+      "Faculty created",
+      201
+    );
+  }
+);
+
+app.get(
+  "/api/faculty/:id",
+  role("SCHOOL"),
+  async (req, res) => {
+    const faculty =
+      await Faculty.findOne({
+        _id: req.params.id,
+        schoolId:
+          req.auth.schoolId,
+        isDeleted: false,
+      }).lean();
+
+    if (!faculty) {
+      return fail(
+        res,
+        "Faculty not found",
+        404
+      );
+    }
+
+    return ok(
+      res,
+      faculty
+    );
+  }
+);
+
+app.put(
+  "/api/faculty/:id",
+  role("SCHOOL"),
+  async (req, res) => {
+    const {
+      schoolId:
+        ignoredSchoolId,
+      _id: ignoredId,
+      ...rawUpdates
+    } = req.body || {};
+
+    const updates =
+      normalizeFacultyPayload(
+        rawUpdates
+      );
+
+    if (!updates.name) {
+      return fail(
+        res,
+        "Faculty name is required"
+      );
+    }
+
+    if (!updates.staffType) {
+      return fail(
+        res,
+        "Faculty type is required"
+      );
+    }
+
+    if (updates.employeeCode) {
+      const duplicate =
+        await Faculty.exists({
+          _id: {
+            $ne: req.params.id,
+          },
+          schoolId:
+            req.auth.schoolId,
+          employeeCode:
+            updates.employeeCode,
+          isDeleted: false,
+        });
+
+      if (duplicate) {
+        return fail(
+          res,
+          "Employee code already exists",
+          409
+        );
+      }
+    }
+
+    const faculty =
+      await Faculty.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          schoolId:
+            req.auth.schoolId,
+          isDeleted: false,
+        },
+        updates,
+        {
+          new: true,
+          runValidators: true,
+        }
+      );
+
+    if (!faculty) {
+      return fail(
+        res,
+        "Faculty not found",
+        404
+      );
+    }
+
+    return ok(
+      res,
+      faculty,
+      "Faculty updated"
+    );
+  }
+);
+
+app.delete(
+  "/api/faculty/:id",
+  role("SCHOOL"),
+  async (req, res) => {
+    const faculty =
+      await Faculty.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          schoolId:
+            req.auth.schoolId,
+          isDeleted: false,
+        },
+        {
+          isDeleted: true,
+        },
+        {
+          new: true,
+        }
+      );
+
+    if (!faculty) {
+      return fail(
+        res,
+        "Faculty not found",
+        404
+      );
+    }
+
+    return ok(
+      res,
+      null,
+      "Faculty removed"
+    );
+  }
+);
+
+app.patch(
+  "/api/faculty/:id/card-generated",
+  role("SCHOOL"),
+  async (req, res) => {
+    const faculty =
+      await Faculty.findOneAndUpdate(
+        {
+          _id: req.params.id,
+          schoolId:
+            req.auth.schoolId,
+          isDeleted: false,
+        },
+        {
+          cardStatus:
+            "GENERATED",
+        },
+        {
+          new: true,
+        }
+      );
+
+    if (!faculty) {
+      return fail(
+        res,
+        "Faculty not found",
+        404
+      );
+    }
+
+    return ok(
+      res,
+      faculty,
+      "Faculty card generated"
+    );
+  }
+);
+
 /* -------------------------------------------------------------------------- */
 /* Templates                                                                  */
 /* -------------------------------------------------------------------------- */
@@ -1533,6 +1941,7 @@ app.get(
         $or: [
           {
             type: "SYSTEM",
+            cardFor: "STUDENT",
           },
           {
             type: "CUSTOM",
@@ -1561,6 +1970,7 @@ app.get(
     const templates =
       await Template.find({
         type: "CUSTOM",
+        cardFor: "STUDENT",
         schoolId:
           req.auth.schoolId,
         isDeleted: false,
@@ -1759,7 +2169,10 @@ app.get(
       selectedTemplate.active === true &&
       selectedTemplate.isDeleted !== true &&
       (
-        selectedTemplate.type === "SYSTEM" ||
+        (
+          selectedTemplate.type === "SYSTEM" &&
+          selectedTemplate.cardFor !== "FACULTY"
+        ) ||
         (
           selectedTemplate.type === "CUSTOM" &&
           String(selectedTemplate.schoolId) === String(req.auth.schoolId)
@@ -1770,6 +2183,7 @@ app.get(
       const firstSystemTemplate =
         await Template.findOne({
           type: "SYSTEM",
+          cardFor: "STUDENT",
           active: true,
           isDeleted: false,
         }).sort({
@@ -1818,6 +2232,7 @@ app.put(
         $or: [
           {
             type: "SYSTEM",
+            cardFor: "STUDENT",
           },
           {
             type: "CUSTOM",
@@ -1862,6 +2277,163 @@ app.put(
       res,
       settings,
       "Template selected"
+    );
+  }
+);
+
+
+app.get(
+  "/api/faculty-templates",
+  role("SCHOOL"),
+  async (req, res) => {
+    await ensureSystemTemplates({
+      force: true,
+    });
+
+    const templates =
+      await Template.find({
+        type: "SYSTEM",
+        cardFor: "FACULTY",
+        active: true,
+        isDeleted: false,
+      })
+        .sort({
+          language: 1,
+          name: 1,
+        })
+        .lean();
+
+    return ok(
+      res,
+      templates
+    );
+  }
+);
+
+app.get(
+  "/api/school/faculty-template-settings",
+  role("SCHOOL"),
+  async (req, res) => {
+    let settings =
+      await TemplateSettings.findOne({
+        schoolId:
+          req.auth.schoolId,
+      })
+        .populate(
+          "facultyTemplateId"
+        )
+        .lean();
+
+    const selected =
+      settings?.facultyTemplateId ||
+      null;
+
+    const valid =
+      selected &&
+      selected.type === "SYSTEM" &&
+      selected.cardFor === "FACULTY" &&
+      selected.active === true &&
+      selected.isDeleted !== true;
+
+    if (!valid) {
+      const first =
+        await Template.findOne({
+          type: "SYSTEM",
+          cardFor: "FACULTY",
+          active: true,
+          isDeleted: false,
+        }).sort({
+          language: 1,
+          name: 1,
+        });
+
+      settings =
+        await TemplateSettings.findOneAndUpdate(
+          {
+            schoolId:
+              req.auth.schoolId,
+          },
+          {
+            $set: {
+              facultyTemplateId:
+                first?._id ||
+                null,
+            },
+            $setOnInsert: {
+              schoolId:
+                req.auth.schoolId,
+            },
+          },
+          {
+            new: true,
+            upsert: true,
+          }
+        )
+          .populate(
+            "facultyTemplateId"
+          )
+          .lean();
+    }
+
+    return ok(
+      res,
+      settings
+    );
+  }
+);
+
+app.put(
+  "/api/school/faculty-template-settings",
+  role("SCHOOL"),
+  async (req, res) => {
+    const templateId =
+      req.body.templateId;
+
+    const exists =
+      await Template.exists({
+        _id: templateId,
+        type: "SYSTEM",
+        cardFor: "FACULTY",
+        active: true,
+        isDeleted: false,
+      });
+
+    if (!exists) {
+      return fail(
+        res,
+        "Faculty template not available",
+        404
+      );
+    }
+
+    const settings =
+      await TemplateSettings.findOneAndUpdate(
+        {
+          schoolId:
+            req.auth.schoolId,
+        },
+        {
+          $set: {
+            facultyTemplateId:
+              templateId,
+          },
+          $setOnInsert: {
+            schoolId:
+              req.auth.schoolId,
+          },
+        },
+        {
+          new: true,
+          upsert: true,
+        }
+      ).populate(
+        "facultyTemplateId"
+      );
+
+    return ok(
+      res,
+      settings,
+      "Faculty template selected"
     );
   }
 );

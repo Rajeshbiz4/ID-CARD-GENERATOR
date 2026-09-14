@@ -216,6 +216,106 @@ const studentSchema = new Schema(
   { timestamps: true }
 );
 
+
+const facultySchema = new Schema(
+  {
+    schoolId: {
+      type: Schema.Types.ObjectId,
+      ref: "School",
+      required: true,
+      index: true,
+    },
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    employeeCode: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    staffType: {
+      type: String,
+      enum: [
+        "Teacher",
+        "Principal",
+        "Head Master",
+        "Office Staff",
+        "Clerk",
+        "Support Staff",
+        "Driver",
+        "Librarian",
+        "Accountant",
+        "Other",
+      ],
+      required: true,
+    },
+    designation: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    department: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    mobile: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    emergencyContact: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    bloodGroup: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    dob: {
+      type: Date,
+      default: null,
+    },
+    joiningDate: {
+      type: Date,
+      default: null,
+    },
+    qualification: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    address: {
+      type: String,
+      default: null,
+      trim: true,
+    },
+    photoFileId: {
+      type: Schema.Types.ObjectId,
+      default: null,
+    },
+    status: {
+      type: String,
+      enum: ["ACTIVE", "INACTIVE"],
+      default: "ACTIVE",
+    },
+    cardStatus: {
+      type: String,
+      enum: ["PENDING", "GENERATED"],
+      default: "PENDING",
+    },
+    isDeleted: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { timestamps: true }
+);
+
 const decorationSchema = new Schema(
   {
     type: {
@@ -260,6 +360,16 @@ const elementSchema = new Schema(
         "principalName",
         "studentPhoto",
         "studentName",
+        "facultyPhoto",
+        "facultyName",
+        "employeeCode",
+        "facultyType",
+        "designation",
+        "department",
+        "facultyMobile",
+        "facultyBloodGroup",
+        "facultyDob",
+        "qualification",
         "admissionNo",
         "rollNo",
         "classDivision",
@@ -385,6 +495,12 @@ const templateSchema = new Schema(
       default: "CUSTOM",
       index: true,
     },
+    cardFor: {
+      type: String,
+      enum: ["STUDENT", "FACULTY"],
+      default: "STUDENT",
+      index: true,
+    },
     category: {
       type: String,
       default: "Modern",
@@ -447,6 +563,11 @@ const templateSettingsSchema = new Schema(
       ref: "Template",
       default: null,
     },
+    facultyTemplateId: {
+      type: Schema.Types.ObjectId,
+      ref: "Template",
+      default: null,
+    },
   },
   { timestamps: true }
 );
@@ -454,6 +575,7 @@ const templateSettingsSchema = new Schema(
 export const User = model("User", userSchema);
 export const School = model("School", schoolSchema);
 export const Student = model("Student", studentSchema);
+export const Faculty = model("Faculty", facultySchema);
 export const Template = model("Template", templateSchema);
 export const TemplateSettings = model(
   "TemplateSettings",
